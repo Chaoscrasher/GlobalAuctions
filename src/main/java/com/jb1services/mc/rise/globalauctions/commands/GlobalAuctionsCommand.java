@@ -5,10 +5,12 @@ import com.chaoscrasher.commands.arglen.ArgLenFour;
 import com.chaoscrasher.commands.arglen.ArgLenOne;
 import com.chaoscrasher.commands.arglen.ArgLenThree;
 import com.chaoscrasher.commands.arglen.ArgLenTwo;
+import com.chaoscrasher.global.ChaosBukkit;
 import com.jb1services.mc.rise.globalauctions.main.GlobalAuctionsPlugin;
 import com.jb1services.mc.rise.globalauctions.structure.Auction;
 import com.jb1services.mc.rise.globalauctions.structure.UUIDS;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
@@ -18,6 +20,7 @@ import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
@@ -64,6 +67,18 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 				a0 -> a0.equalsIgnoreCase("load"))
 				.defineEffectA(this::onLoad)
 				.applyTo(this);
+		
+		ArgLenTwo<Boolean, Boolean> rouletteAddCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, true, true,
+				a0 -> a0.equalsIgnoreCase("roulette"),
+				a1 -> a1.equalsIgnoreCase("add"))
+				.defineEffectAB(this::onRouletteAdd)
+				.applyTo(this);
+		
+		ArgLenThree<Boolean, Boolean, Integer> rouletteAddWithWeightCommand = new ArgLenThree<>(Boolean.class, Boolean.class, Integer.class, true, true,
+				a0 -> a0.equalsIgnoreCase("roulette"),
+				a1 -> a1.equalsIgnoreCase("add"))
+				.defineEffectABC(this::onRouletteAddWithWeight)
+				.applyTo(this);
 	}
 	
 	public void onNewAuction(ArgLenTwo<Boolean, Double> alen)
@@ -93,13 +108,13 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 	public void finishAuction(Auction auction)
 	{
 		plugin.getAuctionsDatabase().addAuction(auction);
-		player.setItemInHand(null);
+		player.getInventory().setItemInMainHand(null);
 		sendGreen("Auction " + auction.getUuid() + " created!");
 	}
 	
 	public void onShowAuctions(ArgLenTwo<Boolean, String> alen)
 	{
-		Optional<OfflinePlayer> plo = getOfflinePlayerByName(alen.getDataBNonOptional());
+		Optional<OfflinePlayer> plo = ChaosBukkit.getOfflinePlayerByName(alen.getDataBNonOptional());
 		if (plo.isPresent())
 		{
 			OfflinePlayer op = plo.get();
@@ -125,13 +140,13 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 				{
 					Auction auc = aucs.values().iterator().next();
 					sendGreen("Showing you auction " + auc.getUuid());
-					auc.showToPlayer(player);
+					auc.showToPlayer(plugin, player);
 				}
 				else
 					sendGreen("These are the auctions fitting your search!:\n" + createAuctionsString(aucs));
 			}
 			else
-				sendRed("Sorry, but there are either more than one or no auction that contain '" + alen.getDataBNonOptional());
+				sendRed("Sorry, but there is no auction that contains '" + alen.getDataBNonOptional() + "'.");
 		}
 		else
 			sendRed("Sorry, but please supply at least 5 characters!");
@@ -171,6 +186,8 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 		{
 			plugin.getAuctionsDatabase().save(plugin);
 			sendGreen("Saved DB!");
+			plugin.getItemRoulette().save(plugin);
+			sendGreen("Saved roulette!");
 		} catch (IOException e)
 		{
 			sendRed("Saving DB failed!");
@@ -181,8 +198,52 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 	
 	public void onLoad(ArgLenOne<Boolean> alen)
 	{
-		plugin.loadAuctionsDatabase();
-		sendGreen("Reloaded DB!");
+		try
+		{
+			plugin.loadAuctionsDatabase();
+			sendGreen("Reloaded DB!");
+			plugin.loadItemRoulette();
+			sendGreen("Reloaded roulette!");
+		} catch (FileNotFoundException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidConfigurationException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void onRouletteAdd(ArgLenTwo<Boolean, Boolean> alen)
+	{
+		if (player.getInventory().getItemInMainHand() != null)
+		{
+			plugin.getItemRoulette().add(player.getInventory().getItemInMainHand(), 0);
+			sendGreen("Item added with weight " + 0 + "!");
+		}
+		else
+			sendRed("You need an item in hand!");
+	}
+	
+	public void onRouletteAddWithWeight(ArgLenThree<Boolean, Boolean, Integer> alen)
+	{
+		if (alen.getDataCNonOptional() >= 0)
+		{
+			if (player.getInventory().getItemInMainHand() != null)
+			{
+				plugin.getItemRoulette().add(player.getInventory().getItemInMainHand(), alen.getDataCNonOptional());
+				sendGreen("Item added with weight " + alen.getDataCNonOptional() + "!");
+			}
+			else
+				sendRed("You need an item in hand!");
+		}
+		else
+			sendRed("Please use a weight > 0!");
 	}
 
 	@Override
@@ -204,15 +265,5 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 			str += auc.getUuid() + ":\n" + auc.getAuctionedItem().getType() + " x" + auc.getAuctionedItem().getAmount() + " for " + auc.getPrice() + "\n\n";
 		}
 		return str;
-	}
-	
-	public Optional<OfflinePlayer> getOfflinePlayerByName(String name)
-	{
-		for (OfflinePlayer op : Bukkit.getOfflinePlayers())
-		{
-			if (op.getName().equals(name))
-				return Optional.of(op);
-		}
-		return Optional.empty();
 	}
 }

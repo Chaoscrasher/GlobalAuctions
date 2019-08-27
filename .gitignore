@@ -4,3 +4,4 @@
 /bin/
 gbc.sh
 /.gradle/
+/build/

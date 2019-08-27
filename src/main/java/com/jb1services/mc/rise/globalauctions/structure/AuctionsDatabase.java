@@ -121,8 +121,11 @@ public class AuctionsDatabase implements ConfigurationSerializable
 	
 	public void save(GlobalAuctionsPlugin plugin) throws IOException
 	{
-		plugin.getConfig().set("auctions", auctions);
-		plugin.saveConfig();
+		if (!auctions.isEmpty())
+		{
+			plugin.getConfig().set("auctions", auctions);
+			plugin.saveConfig();
+		}
 	}
 
 	@Override
@@ -134,5 +137,12 @@ public class AuctionsDatabase implements ConfigurationSerializable
 			aucs.put(uuids.toString(), auctions.get(uuids));
 		}
 		return aucs;
+	}
+	
+	public Optional<Auction> getAuction(UUIDS plyr, UUIDS auction)
+	{
+		if (auctions.containsKey(plyr) && auctions.get(plyr).containsKey(auction))
+			return Optional.of(auctions.get(plyr).get(auction));
+		return Optional.empty();
 	}
 }
