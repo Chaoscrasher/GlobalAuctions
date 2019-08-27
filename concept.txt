@@ -1,0 +1,3 @@
+Left:
+	Make it possible to show all auctions from a given player name
+	Make it show if there is more than one auction with the given String or not.

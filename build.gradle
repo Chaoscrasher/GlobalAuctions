@@ -1,0 +1,39 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+sourceSets.test.java.srcDirs = ['test/main/java']
+sourceSets.main.java.srcDirs = ['src/main/java']
+
+sourceSets {
+    main {
+        resources {
+            include '*.yml'
+        }
+    }
+}
+
+jar
+{
+    from
+	{
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven {
+   		url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots"
+	}
+	maven {
+        url = "https://oss.sonatype.org/content/repositories/snapshots/"
+    }
+    flatDir { dirs 'lib' }
+}
+
+dependencies {
+    compileOnly "org.spigotmc:spigot-api:1.14.4-R0.1-SNAPSHOT"
+    compile project(':jbutil')
+    compile project(':chaosmcutil')
+    compile fileTree(dir: 'libs', include: '*.jar')
+}
