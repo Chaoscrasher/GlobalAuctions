@@ -1,5 +1,6 @@
 package com.jb1services.mc.rise.globalauctions.structure;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -32,6 +33,16 @@ public class ItemStackRoulette implements ConfigurationSerializable
 		}
 	}
 	
+	public boolean isRandom()
+	{
+		return random;
+	}
+
+	public Map<ItemStack, Integer> getItemRoulette()
+	{
+		return Collections.unmodifiableMap(itemRoulette);
+	}
+
 	public static ItemStackRoulette deserialize(Map<String, Object> map)
 	{
 		ItemStackRoulette ir = new ItemStackRoulette();

@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
@@ -78,6 +79,12 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 				a0 -> a0.equalsIgnoreCase("roulette"),
 				a1 -> a1.equalsIgnoreCase("add"))
 				.defineEffectABC(this::onRouletteAddWithWeight)
+				.applyTo(this);
+		
+		ArgLenTwo<Boolean, Boolean> rouletteShowCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, true, true,
+				a0 -> a0.equalsIgnoreCase("roulette"),
+				a1 -> a1.equalsIgnoreCase("show"))
+				.defineEffectAB(this::onRouletteShow)
 				.applyTo(this);
 	}
 	
@@ -244,6 +251,20 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 		}
 		else
 			sendRed("Please use a weight > 0!");
+	}
+	
+	public void onRouletteShow(ArgLenTwo<Boolean, Boolean> alen)
+	{
+		Map<ItemStack, Integer> ir = plugin.getItemRoulette().getItemRoulette();
+		if (!ir.isEmpty())
+		{
+			for (ItemStack key : ir.keySet())
+			{
+				sendGold(key + "\nweight: " + ir.get(key));
+			}
+		}
+		else
+			player.sendMessage("You don't have any items set-up!");
 	}
 
 	@Override
