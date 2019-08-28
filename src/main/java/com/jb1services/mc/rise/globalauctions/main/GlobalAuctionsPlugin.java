@@ -3,6 +3,7 @@ package com.jb1services.mc.rise.globalauctions.main;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Optional;
 
 import org.bukkit.Bukkit;
@@ -55,21 +56,55 @@ public class GlobalAuctionsPlugin extends JavaPlugin {
 		ConfigurationSerialization.registerClass(UUIDS.class);
 		ConfigurationSerialization.registerClass(ItemStackRoulette.class);
 		vcol = new VaultCollection(this);
-		/*
-		if (getConfig().getConfigurationSection("auctions") != null)
+		
+		boolean foundA = getConfig().getConfigurationSection("auctions") != null;
+		System.err.println((foundA ? "Did " : "Did not ") + "find auctions in config.");
+		if (foundA)
 		{
-			System.err.println((getConfig().getConfigurationSection("auctions") != null ? "Did " : "Did not ") + "find auctions in config. Trying to load!");
-			loadAuctionsDatabase();
+			try
+			{
+				loadAuctionsDatabase();
+				System.out.println("Auctions loaded successfully!");
+			} catch (FileNotFoundException e)
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e)
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InvalidConfigurationException e)
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
-		*/
-		/*
-		if (getConfig().getConfigurationSection("roulette") != null)
+		
+		boolean foundR = getConfig().get("roulette") != null;
+		System.err.println((foundR ? "Did " : "Did not ") + "find roulette in config.");
+		if (foundR)
 		{
-			System.err.println((getConfig().getConfigurationSection("roulette") != null ? "Did " : "Did not ") + "find roulette in config. Trying to load!");
-			loadAuctionsDatabase();
+			
+			try
+			{
+				loadItemRoulette();
+				System.out.println("Roulette loaded successfully!");
+			} catch (FileNotFoundException e)
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e)
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InvalidConfigurationException e)
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
-		*/
-		System.out.println("GlobalAuctions loaded!");
+		
+		System.err.println("GlobalAuctions loaded!");
 	}
 
 	@Override
@@ -121,7 +156,7 @@ public class GlobalAuctionsPlugin extends JavaPlugin {
 	{
 		return itemRoulette;
 	}
-
+	
 	public boolean negativePriceAllowed()
 	{
 		return false;
@@ -132,8 +167,34 @@ public class GlobalAuctionsPlugin extends JavaPlugin {
 		return INVENTORY_TITLE;
 	}
 	
+	public boolean getCanBuyOwn()
+	{
+		return getConfig().getBoolean("can-buy-own");
+	}
+	
+	public int getRandomPriceBound()
+	{
+		return getConfig().getInt("r-price-bound");
+	}
+	
 	public Optional<Economy> getEconomy()
 	{
 		return Optional.ofNullable(vcol.getEconomy());
+	}
+	
+	public String getAllAuctionsMessage()
+	{
+		Map<UUIDS, Map<UUIDS, Auction>> aucs = auctionsDatabase.getAuctions();  
+		String str = "";
+		for (UUIDS uuids : aucs.keySet())
+		{
+			str += Bukkit.getOfflinePlayer(uuids.getUUID()).getName() + "\n\n";
+			Map<UUIDS, Auction> smp = aucs.get(uuids);
+			for (Auction auc : smp.values())
+			{
+				str += auc.toIngameString(false);
+			}
+		}
+		return str;
 	}
 }

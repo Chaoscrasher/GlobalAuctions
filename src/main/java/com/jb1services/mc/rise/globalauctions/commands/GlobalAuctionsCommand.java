@@ -10,12 +10,15 @@ import com.jb1services.mc.rise.globalauctions.main.GlobalAuctionsPlugin;
 import com.jb1services.mc.rise.globalauctions.structure.Auction;
 import com.jb1services.mc.rise.globalauctions.structure.UUIDS;
 
+import net.md_5.bungee.api.ChatColor;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
@@ -33,9 +36,10 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 	public GlobalAuctionsCommand(GlobalAuctionsPlugin plugin)
 	{
 		this.plugin = plugin;
-		ArgLenOne<Boolean> cmd1 = new ArgLenOne<>(Boolean.class, true, false,
-				a0 -> a0.equalsIgnoreCase("show"))
-				.defineEffectA(this::onShowMyAuctions)
+		ArgLenTwo<Boolean, Boolean> cmd1 = new ArgLenTwo<>(Boolean.class, Boolean.class, true, false,
+				a0 -> a0.equalsIgnoreCase("show"),
+				a1 -> a1.equalsIgnoreCase("my"))
+				.defineEffectAB(this::onShowMyAuctions)
 				.applyTo(this);
 		
 		ArgLenTwo<Boolean, String> cmd2 = new ArgLenTwo<>(Boolean.class, String.class, true, false,
@@ -52,6 +56,18 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 				a0 -> a0.equalsIgnoreCase("make"),
 				a1 -> a1.equalsIgnoreCase("ask"))
 				.defineEffectABC(this::onNewAsk)
+				.applyTo(this);
+		
+		ArgLenThree<Boolean, Boolean, Double> randomAuctionWithPriceCommand = new ArgLenThree<>(Boolean.class, Boolean.class, Double.class, true, true,
+				a0 -> a0.equalsIgnoreCase("make"),
+				a1 -> a1.equalsIgnoreCase("rauc"))
+				.defineEffectABC(this::onRandomAuctionWithPrice)
+				.applyTo(this);
+		
+		ArgLenTwo<Boolean, Boolean> randomAuctionCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, true, true,
+				a0 -> a0.equalsIgnoreCase("make"),
+				a1 -> a1.equalsIgnoreCase("rauc"))
+				.defineEffectAB(this::onRandomAuction)
 				.applyTo(this);
 		
 		ArgLenTwo<Boolean, String> cancelCommand = new ArgLenTwo<>(Boolean.class, String.class, true, false,
@@ -81,10 +97,28 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 				.defineEffectABC(this::onRouletteAddWithWeight)
 				.applyTo(this);
 		
+		ArgLenThree<Boolean, Boolean, Integer> rouletteRemoveCommand = new ArgLenThree<>(Boolean.class, Boolean.class, Integer.class, true, true,
+				a0 -> a0.equalsIgnoreCase("roulette"),
+				a1 -> a1.equalsIgnoreCase("remove"))
+				.defineEffectABC(this::onRouletteRemove)
+				.applyTo(this);
+		
 		ArgLenTwo<Boolean, Boolean> rouletteShowCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, true, true,
 				a0 -> a0.equalsIgnoreCase("roulette"),
 				a1 -> a1.equalsIgnoreCase("show"))
 				.defineEffectAB(this::onRouletteShow)
+				.applyTo(this);
+		
+		ArgLenTwo<Boolean, Boolean> rouletteSwitchCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, true, true,
+				a0 -> a0.equalsIgnoreCase("roulette"),
+				a1 -> a1.equalsIgnoreCase("switch"))
+				.defineEffectAB(this::onRouletteSwitch)
+				.applyTo(this);
+		
+		ArgLenTwo<Boolean, Boolean> listAuctionsCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, true, true,
+				a0 -> a0.equalsIgnoreCase("list"),
+				a1 -> a1.contains("auc"))
+				.defineEffectAB(this::onListAuctions)
 				.applyTo(this);
 	}
 	
@@ -158,8 +192,8 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 		else
 			sendRed("Sorry, but please supply at least 5 characters!");
 	}
-	
-	public void onShowMyAuctions(ArgLenOne<Boolean> alen)
+		
+	public void onShowMyAuctions(ArgLenTwo<Boolean, Boolean> alen)
 	{
 		Map<UUIDS, Auction> auctions = plugin.getAuctionsDatabase().getAuctions(player.getUniqueId());
 		if (!auctions.isEmpty())
@@ -250,7 +284,25 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 				sendRed("You need an item in hand!");
 		}
 		else
-			sendRed("Please use a weight > 0!");
+			sendRed("Please use a weight >= 0!");
+	}
+	
+	public void onRouletteRemove(ArgLenThree<Boolean, Boolean, Integer> alen)
+	{
+		if (alen.getDataCNonOptional() >= 0)
+		{
+			Optional<ItemStack> iso = plugin.getItemRoulette().getStack(alen.getDataCNonOptional());
+			if (iso.isPresent())
+			{
+				ItemStack is = iso.get();
+				plugin.getItemRoulette().removeStack(alen.getDataCNonOptional());
+				sendGreen("ItemStack "+ChatColor.WHITE+alen.getDataCNonOptional()+ChatColor.DARK_GREEN+" (" + is.getType() + " x" + is.getAmount() + ", weight "+ plugin.getItemRoulette().getItemRoulette().get(is) + ") " + ChatColor.GREEN + "was removed from the Item Roulette!");
+			}
+			else
+				sendRed("Sorry, but you only have " + ChatColor.WHITE + plugin.getItemRoulette().getItemRoulette().size() + ChatColor.RED + " items in the item roulette!");
+		}
+		else
+			sendRed("Please use an index >= 0!");
 	}
 	
 	public void onRouletteShow(ArgLenTwo<Boolean, Boolean> alen)
@@ -265,6 +317,37 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 		}
 		else
 			player.sendMessage("You don't have any items set-up!");
+	}
+	
+	public void onRandomAuctionWithPrice(ArgLenThree<Boolean, Boolean, Double> alen)
+	{
+		if (alen.getDataCNonOptional() >= 0)
+		{
+			Auction auc = new Auction(player.getUniqueId(), plugin.getItemRoulette().decide().get(), alen.getDataCNonOptional());
+			plugin.getAuctionsDatabase().addAuction(auc);
+			sendGreen("Auction " + ChatColor.WHITE + auc.getUuid() + " is live!");
+		}
+		else 
+			sendRed("Sorry, only positive prices are allowed!");
+	}
+	
+	public void onRandomAuction(ArgLenTwo<Boolean, Boolean> alen)
+	{
+		Random rnd = new Random();
+		int cost = rnd.nextInt(plugin.getRandomPriceBound());
+		Auction auc = new Auction(player.getUniqueId(), plugin.getItemRoulette().decide().get(), cost);
+		sendGreen("Random Auction " + ChatColor.WHITE + auc.getUuid() + ChatColor.GREEN + " is live!");
+	}
+	
+	public void onRouletteSwitch(ArgLenTwo<Boolean, Boolean> alen)
+	{
+		plugin.getItemRoulette().switchMode();
+		sendGreen("ItemStack is now set up so that " + ChatColor.WHITE + (plugin.getItemRoulette().isRandom() ? "all items have the same probability" : "all items have their own probability") + ChatColor.GREEN + "!");
+	}
+	
+	public void onListAuctions(ArgLenTwo<Boolean, Boolean> alen)
+	{
+		sender.sendMessage(plugin.getAllAuctionsMessage());
 	}
 
 	@Override

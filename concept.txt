@@ -1,4 +1,5 @@
 Left:
+	All commands in plugin.yml
 	
 DONE!:)
 	Make it possible to show all auctions from a given player name

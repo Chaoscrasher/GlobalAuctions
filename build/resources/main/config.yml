@@ -1,1 +1,2 @@
-testkey: "testval"
+r-price-bound: 2000
+can-buy-own: true

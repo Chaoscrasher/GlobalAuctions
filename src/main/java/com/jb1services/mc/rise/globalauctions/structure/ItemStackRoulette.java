@@ -52,6 +52,7 @@ public class ItemStackRoulette implements ConfigurationSerializable
 			if (val instanceof Map)
 			{
 				Map<String, Object> imap = (Map<String, Object>) val;
+				
 				ir.add((ItemStack) imap.get("item"), (Integer) imap.get("weight"));
 				/*ItemStack is = (ItemStack) imap.get("item");
 				Integer weight = (Integer) imap.get("weight")
@@ -112,6 +113,7 @@ public class ItemStackRoulette implements ConfigurationSerializable
 		for (ItemStack is : itemRoulette.keySet())
 		{
 			map.put(count+"", subMap(is));
+			count++;
 		}
 		return map;
 	}
@@ -131,6 +133,48 @@ public class ItemStackRoulette implements ConfigurationSerializable
 			plugin.getConfig().set("roulette", this);
 			plugin.saveConfig();
 		}
+	}
+	
+	public Optional<ItemStack> getStack(int ind)
+	{
+		int i = 0;
+		ItemStack toR = null;
+		for (ItemStack key : this.itemRoulette.keySet())
+		{
+			if (i == ind)
+			{
+				toR = key;
+				break;
+			}
+			i++;
+		}
+		return Optional.ofNullable(toR);
+	}
+	
+	public boolean removeStack(int ind)
+	{
+		int i = 0;
+		ItemStack toR = null;
+		for (ItemStack key : this.itemRoulette.keySet())
+		{
+			if (i == ind)
+			{
+				toR = key;
+				break;
+			}
+			i++;
+		}
+		if (toR != null)
+		{
+			itemRoulette.remove(toR);
+			return true;
+		}
+		return false;
+	}
+
+	public void switchMode()
+	{
+		this.random = !random;
 	}
 }
 	

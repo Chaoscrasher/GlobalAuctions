@@ -40,14 +40,19 @@ public class Auction implements ConfigurationSerializable
 		this.isAsk = (boolean) map.get("isAsk");
 	}
 	
-	public Auction(UUID creator, ItemStack itemStack, double price, boolean sell)
+	public Auction(UUID creator, ItemStack itemStack, double price, boolean ask)
 	{
-		this(UUIDS.of(creator), UUIDS.randomUUIDS(), itemStack, price, sell);
+		this(UUIDS.of(creator), UUIDS.randomUUIDS(), itemStack, price, ask);
 	}
 	
-	public Auction(UUIDS creator, ItemStack itemStack, double price, boolean sell)
+	public Auction(UUID creator, ItemStack itemStack, double price)
 	{
-		this(creator, UUIDS.randomUUIDS(), itemStack, price, sell);
+		this(UUIDS.of(creator), UUIDS.randomUUIDS(), itemStack, price, false);
+	}
+	
+	public Auction(UUIDS creator, ItemStack itemStack, double price, boolean ask)
+	{
+		this(creator, UUIDS.randomUUIDS(), itemStack, price, ask);
 	}
 
 	/*
@@ -288,5 +293,10 @@ public class Auction implements ConfigurationSerializable
 			}
 		}
 		return false;
+	}
+	
+	public String toIngameString(boolean includeCreator)
+	{
+		return (includeCreator ? getCreatorAsOfflinePlayer().getName() + ": " : "") + uuid + " " + (isAsk ? "(Ask)" : "(Sell)") +"\n" + auctionedItem.getType() + " x" + auctionedItem.getAmount() + " for " + price;
 	}
 }

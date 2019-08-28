@@ -2,6 +2,7 @@ package com.jb1services.mc.rise.globalauctions.structure;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -144,5 +145,10 @@ public class AuctionsDatabase implements ConfigurationSerializable
 		if (auctions.containsKey(plyr) && auctions.get(plyr).containsKey(auction))
 			return Optional.of(auctions.get(plyr).get(auction));
 		return Optional.empty();
+	}
+
+	public Map<UUIDS, Map<UUIDS, Auction>> getAuctions()
+	{
+		return Collections.unmodifiableMap(auctions);
 	}
 }
