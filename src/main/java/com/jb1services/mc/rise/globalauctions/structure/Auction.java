@@ -100,7 +100,7 @@ public class Auction implements ConfigurationSerializable
 	public String makeInventoryTitle(GlobalAuctionsPlugin plugin)
 	{
 		String pname = Bukkit.getOfflinePlayer(creator.getUUID()).getName();
-		return plugin.getInventoryTitle().replace("{TYPE}", isAsk ? ChatColor.DARK_RED+"Auction" : ChatColor.DARK_GREEN+"Ask").replace("{USER_NAME}", pname);
+		return plugin.getInventoryTitle().replace("{TYPE}", isAsk ? ChatColor.DARK_GREEN+"Ask" : ChatColor.DARK_RED+"Auction").replace("{USER_NAME}", pname);
 	}
 	
 	public void showToPlayer(GlobalAuctionsPlugin plugin, Player player)

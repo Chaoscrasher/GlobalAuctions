@@ -25,7 +25,7 @@ import net.milkbowl.vault.economy.Economy;
 
 public class GlobalAuctionsPlugin extends JavaPlugin {
 
-	public static final String INVENTORY_TITLE_PREFIX = ChatColor.DARK_RED+"Global"+ChatColor.GOLD+"Auctions: ";
+	public static final String INVENTORY_TITLE_PREFIX = ChatColor.DARK_RED+"G"+ChatColor.GOLD+"A"+ChatColor.DARK_GREEN+"S"+ChatColor.WHITE+": ";
 	public static final String INVENTORY_TITLE_CONTENT = "{TYPE} by {USER_NAME}.";
 	public static final String INVENTORY_TITLE = INVENTORY_TITLE_PREFIX + INVENTORY_TITLE_CONTENT;
 	public static final String ASK_EXECUTE_NAME = ChatColor.DARK_GREEN + "SELL";
