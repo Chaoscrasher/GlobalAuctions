@@ -7,10 +7,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemorySection;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import com.jb1services.mc.rise.globalauctions.main.GlobalAuctionsPlugin;
 
@@ -175,6 +179,17 @@ public class ItemStackRoulette implements ConfigurationSerializable
 	public void switchMode()
 	{
 		this.random = !random;
+	}
+	
+	public Optional<Inventory> makeInventory()
+	{
+		if (itemRoulette.size() > 0)
+		{
+			Inventory inv = Bukkit.createInventory(null, 54, GlobalAuctionsPlugin.ROULETTE_MENU_TITLE);
+			//TODO: Make stacks
+			return Optional.of(inv);
+		}
+		return Optional.empty();
 	}
 }
 	

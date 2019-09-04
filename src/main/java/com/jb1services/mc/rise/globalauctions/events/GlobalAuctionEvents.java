@@ -43,43 +43,136 @@ public class GlobalAuctionEvents extends InventoryEventListener implements Debug
 		Optional<Economy> econ = getPlugin().getEconomy();
 		if (econ.isPresent())
 		{
-			Economy eco = econ.get();
-			if (detectGlobalAuctionsInventory(e))
+			if (globalAuctionsInventoryDetected(e))
 			{
-				Inventory inv = e.getClickedInventory();
 				Player player = (Player) e.getWhoClicked();
-				if (e.getCurrentItem() != null)
-				{
-					ItemStack clicked = e.getCurrentItem();
-					if (clicked.getItemMeta().getDisplayName().equals(GlobalAuctionsPlugin.ASK_EXECUTE_NAME) ||
-							clicked.getItemMeta().getDisplayName().equals(GlobalAuctionsPlugin.SELL_EXECUTE_NAME))
-					{
-						ItemStack itemFromInv = inv.getItem(GlobalAuctionsPlugin.DEFAULT_ITEM_SLOT);
-						List<String> lore = clicked.getItemMeta().getLore();
-						Optional<Auction> auco = Auction.fromLore(getPlugin().getAuctionsDatabase(), lore);
-						if (auco.isPresent())
-						{
-							Auction auc = auco.get();
-							ItemStack auci = auc.getAuctionedItem();
-							debug1("is from inv: " + itemFromInv + "\nis from auc: " + auc.getAuctionedItem() + "\neq: " + itemFromInv.equals(auc.getAuctionedItem()));
-							auc.finalizeAuction(e.getView(), getPlugin(), player);
-						}
-						else
-							throw new IllegalStateException("ItemSlot doesn't contain item!");
-					}
-				}
 				e.setCancelled(true);
+				if (auctionMenuDetected(e))
+				{
+					auctionProcessing(e);
+				}
+				else if (mainMenuDetected(e))
+				{
+					mainMenuProcessing(e);
+				}
+				else if (detectAskMenu(e))
+				{
+					asksSellsMenuProcessing(e, player);
+				}
+				else if (detectSellMenu(e))
+				{
+					asksSellsMenuProcessing(e, player);
+				}
 			}
 		}
 		else
 			throw new IllegalStateException("Economy not initialized!");
 	}
 	
-	public boolean detectGlobalAuctionsInventory(InventoryClickEvent e)
+	public boolean globalAuctionsInventoryDetected(InventoryClickEvent e)
 	{
-		return clickedOnNotOwnedInventory(e) && clickedOnInventoryWhereTitlePred(e, tit -> tit.startsWith(GlobalAuctionsPlugin.INVENTORY_TITLE_PREFIX));
+		return clickedOnNotOwnedInventory(e) && clickedOnInventoryWhereTitlePred(e, tit -> tit.startsWith(GlobalAuctionsPlugin.GAS));
 	}
-
+	
+	public boolean mainMenuDetected(InventoryClickEvent e)
+	{
+		return clickedOnNotOwnedInventory(e) && clickedOnInventoryWhereTitlePred(e, tit -> tit.startsWith(GlobalAuctionsPlugin.MAIN_MENU_TITLE));
+	}
+	
+	private void mainMenuProcessing(InventoryClickEvent e)
+	{
+		Inventory inv = e.getClickedInventory();
+		Player player = (Player) e.getWhoClicked();
+		if (e.getCurrentItem() != null)
+		{
+			ItemStack clicked = e.getCurrentItem();
+			if (clicked.getItemMeta().getDisplayName().equals(GlobalAuctionsPlugin.MAIN_MENU_SELLS_TITLE))
+			{
+				Optional<Inventory> sellso = getPlugin().getAuctionsDatabase().makeSellsInventory();
+				if (sellso.isPresent())
+				{
+					player.openInventory(sellso.get());
+				}
+				else
+					player.sendMessage("There are no open sells currently!");
+			}
+			else if (clicked.getItemMeta().getDisplayName().equals(GlobalAuctionsPlugin.MAIN_MENU_ASKS_TITLE))
+			{
+				Optional<Inventory> askso = getPlugin().getAuctionsDatabase().makeAsksInventory();
+				if (askso.isPresent())
+				{
+					player.openInventory(askso.get());
+				}
+				else
+					player.sendMessage("There are no open asks currently!");
+			}
+		}
+		e.setCancelled(true);
+	}
+	
+	public boolean auctionMenuDetected(InventoryClickEvent e)
+	{
+		return clickedOnNotOwnedInventory(e) && clickedOnInventoryWhereTitlePred(e, tit -> tit.startsWith(GlobalAuctionsPlugin.AUCTION_TITLE_PREFIX));
+	}
+	
+	private void auctionProcessing(InventoryClickEvent e)
+	{
+		Inventory inv = e.getClickedInventory();
+		Player player = (Player) e.getWhoClicked();
+		if (e.getCurrentItem() != null)
+		{
+			ItemStack clicked = e.getCurrentItem();
+			if (clicked.getItemMeta().getDisplayName().equals(GlobalAuctionsPlugin.ASK_EXECUTE_NAME) ||
+					clicked.getItemMeta().getDisplayName().equals(GlobalAuctionsPlugin.SELL_EXECUTE_NAME))
+			{
+				ItemStack itemFromInv = inv.getItem(GlobalAuctionsPlugin.DEFAULT_ITEM_SLOT);
+				List<String> lore = clicked.getItemMeta().getLore();
+				Optional<Auction> auco = Auction.fromLore(getPlugin().getAuctionsDatabase(), lore);
+				if (auco.isPresent())
+				{
+					Auction auc = auco.get();
+					ItemStack auci = auc.getAuctionedItem();
+					debug1("is from inv: " + itemFromInv + "\nis from auc: " + auc.getAuctionedItem() + "\neq: " + itemFromInv.equals(auc.getAuctionedItem()));
+					auc.finalizeAuction(e.getView(), getPlugin(), player);
+				}
+				else
+					throw new IllegalStateException("ItemSlot doesn't contain item!");
+			}
+		}
+		e.setCancelled(true);
+	}
+	
+	private void asksSellsMenuProcessing(InventoryClickEvent e, Player player)
+	{
+		Inventory inv = e.getClickedInventory();
+		ItemStack cs = inv.getItem(e.getSlot());
+		if (cs != null)
+		{
+			Optional<Auction> auco = getPlugin().getAuctionsDatabase().getAuctionFromItemStackSymbol(cs);
+			if (auco.isPresent())
+			{
+				auco.get().showToPlayer(getPlugin(), player);
+			}
+		}
+	}
+	
+	public boolean detectMainMenu(InventoryClickEvent e)
+	{
+		return clickedOnNotOwnedInventory(e) && clickedOnInventoryWhereTitlePred(e, tit -> tit.startsWith(GlobalAuctionsPlugin.MAIN_MENU_TITLE));
+	}
+	
+	public boolean detectSellMenu(InventoryClickEvent e)
+	{
+		return clickedOnNotOwnedInventory(e) && clickedOnInventoryWhereTitlePred(e, tit -> tit.startsWith(GlobalAuctionsPlugin.SELLS_MENU_TITLE));
+	}
+	
+	public boolean detectAskMenu(InventoryClickEvent e)
+	{
+		return clickedOnNotOwnedInventory(e) && clickedOnInventoryWhereTitlePred(e, tit -> tit.startsWith(GlobalAuctionsPlugin.ASKS_MENU_TITLE));
+	}
+	
+	
+	
 	@Override
 	public boolean isd1()
 	{

@@ -5,3 +5,4 @@
 gbc.sh
 /.gradle/
 /build/
+/bin/

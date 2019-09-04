@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
@@ -36,6 +37,11 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 	public GlobalAuctionsCommand(GlobalAuctionsPlugin plugin)
 	{
 		this.plugin = plugin;
+		ArgLenOne<Boolean> menuCommand = new ArgLenOne<>(Boolean.class, true, false,
+				a0 -> a0.equalsIgnoreCase("menu"))
+				.defineEffectA(this::onGlobalAuctionsMenu)
+				.applyTo(this);
+		
 		ArgLenTwo<Boolean, Boolean> cmd1 = new ArgLenTwo<>(Boolean.class, Boolean.class, true, false,
 				a0 -> a0.equalsIgnoreCase("show"),
 				a1 -> a1.equalsIgnoreCase("my"))
@@ -120,6 +126,11 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 				a1 -> a1.contains("auc"))
 				.defineEffectAB(this::onListAuctions)
 				.applyTo(this);
+	}
+	
+	public void onGlobalAuctionsMenu(ArgLenOne<Boolean> alen)
+	{
+		player.openInventory(plugin.makeMainMenu());
 	}
 	
 	public void onNewAuction(ArgLenTwo<Boolean, Double> alen)

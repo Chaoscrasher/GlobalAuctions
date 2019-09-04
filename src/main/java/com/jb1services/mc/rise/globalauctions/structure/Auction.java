@@ -1,5 +1,6 @@
 package com.jb1services.mc.rise.globalauctions.structure;
 
+import static com.jb1services.mc.rise.globalauctions.main.GlobalAuctionsPlugin.*;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -293,6 +294,15 @@ public class Auction implements ConfigurationSerializable
 			}
 		}
 		return false;
+	}
+	
+	public ItemStack makeMenuItemStack()
+	{
+		ItemStack is = new ItemStack(this.auctionedItem.getType(), this.auctionedItem.getAmount());
+		ItemMeta im = is.getItemMeta();
+		im.setLore(Arrays.asList(AUCTION_ITEM_AUCTION_LORE.replace(AUCTION_ITEM_AUCTION_LORE_PLACEHOLDER, this.getUuid().toString()), "Price: " + this.getPrice()));
+		is.setItemMeta(im);
+		return is;
 	}
 	
 	public String toIngameString(boolean includeCreator)
