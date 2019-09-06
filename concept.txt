@@ -1,6 +1,7 @@
 Left:
 	All commands in plugin.yml
 	Make retrieval of getAuction(UUID) more efficient.
+	Player names in lores wherever there is a uuid.
 	
 DONE!:)
 	Make it possible to show all auctions from a given player name

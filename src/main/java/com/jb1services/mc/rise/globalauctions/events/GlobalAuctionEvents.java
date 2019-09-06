@@ -16,6 +16,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import com.chaoscrasher.events.ChaosEventListener;
 import com.chaoscrasher.events.InventoryEventListener;
+import com.chaoscrasher.global.CCStringUtils;
 import com.chaoscrasher.utils.Debuggable;
 import com.jb1services.mc.rise.globalauctions.main.GlobalAuctionsPlugin;
 import com.jb1services.mc.rise.globalauctions.structure.Auction;
@@ -62,6 +63,10 @@ public class GlobalAuctionEvents extends InventoryEventListener implements Debug
 				else if (detectSellMenu(e))
 				{
 					asksSellsMenuProcessing(e, player);
+				}
+				else if (detectRouletteMenu(e))
+				{
+					rouletteMenuProcessing(e);
 				}
 			}
 		}
@@ -112,7 +117,7 @@ public class GlobalAuctionEvents extends InventoryEventListener implements Debug
 	
 	public boolean auctionMenuDetected(InventoryClickEvent e)
 	{
-		return clickedOnNotOwnedInventory(e) && clickedOnInventoryWhereTitlePred(e, tit -> tit.startsWith(GlobalAuctionsPlugin.AUCTION_TITLE_PREFIX));
+		return clickedOnNotOwnedInventory(e) && clickedOnInventoryWhereTitlePred(e, tit -> CCStringUtils.containsIgnoreFiller(GlobalAuctionsPlugin.AUCTION_TITLE, tit));
 	}
 	
 	private void auctionProcessing(InventoryClickEvent e)
@@ -140,6 +145,11 @@ public class GlobalAuctionEvents extends InventoryEventListener implements Debug
 			}
 		}
 		e.setCancelled(true);
+	}
+	
+	private void rouletteMenuProcessing(InventoryClickEvent e)
+	{
+		
 	}
 	
 	private void asksSellsMenuProcessing(InventoryClickEvent e, Player player)
@@ -171,7 +181,10 @@ public class GlobalAuctionEvents extends InventoryEventListener implements Debug
 		return clickedOnNotOwnedInventory(e) && clickedOnInventoryWhereTitlePred(e, tit -> tit.startsWith(GlobalAuctionsPlugin.ASKS_MENU_TITLE));
 	}
 	
-	
+	public boolean detectRouletteMenu(InventoryClickEvent e)
+	{
+		return clickedOnNotOwnedInventory(e) && clickedOnInventoryWhereTitlePred(e, tit -> tit.startsWith(GlobalAuctionsPlugin.ROULETTE_MENU_TITLE));
+	}
 	
 	@Override
 	public boolean isd1()

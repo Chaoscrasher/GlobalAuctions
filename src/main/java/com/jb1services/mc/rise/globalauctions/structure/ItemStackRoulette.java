@@ -1,5 +1,6 @@
 package com.jb1services.mc.rise.globalauctions.structure;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -16,6 +17,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import com.chaoscrasher.global.ChaosBukkit;
 import com.jb1services.mc.rise.globalauctions.main.GlobalAuctionsPlugin;
 
 public class ItemStackRoulette implements ConfigurationSerializable
@@ -181,12 +183,23 @@ public class ItemStackRoulette implements ConfigurationSerializable
 		this.random = !random;
 	}
 	
-	public Optional<Inventory> makeInventory()
+	public Optional<Inventory> asInventory()
 	{
 		if (itemRoulette.size() > 0)
 		{
-			Inventory inv = Bukkit.createInventory(null, 54, GlobalAuctionsPlugin.ROULETTE_MENU_TITLE);
-			//TODO: Make stacks
+			int nslots = (int) Math.ceil(itemRoulette.size() / 9.0) * 9;
+			int slots = nslots > 54 ? 54 : nslots;
+			Inventory inv = Bukkit.createInventory(null, slots, GlobalAuctionsPlugin.ROULETTE_MENU_TITLE);
+			int i = 0;
+			for (ItemStack is : itemRoulette.keySet())
+			{
+				ItemStack cnd = is.clone();
+				ChaosBukkit.applyLore(is, Arrays.asList("weight: " + itemRoulette.get(is)));
+				if (i > 54)
+					break;
+				inv.setItem(i, cnd);
+				i++;
+			}
 			return Optional.of(inv);
 		}
 		return Optional.empty();

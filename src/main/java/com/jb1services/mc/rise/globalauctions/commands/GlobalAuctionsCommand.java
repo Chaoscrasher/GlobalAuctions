@@ -2,6 +2,7 @@ package com.jb1services.mc.rise.globalauctions.commands;
 
 import com.chaoscrasher.commands.ChaosCommandExecutor;
 import com.chaoscrasher.commands.arglen.ArgLenFour;
+import com.chaoscrasher.commands.arglen.ArgLenGeneric;
 import com.chaoscrasher.commands.arglen.ArgLenOne;
 import com.chaoscrasher.commands.arglen.ArgLenThree;
 import com.chaoscrasher.commands.arglen.ArgLenTwo;
@@ -25,6 +26,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
@@ -113,6 +115,13 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 				a0 -> a0.equalsIgnoreCase("roulette"),
 				a1 -> a1.equalsIgnoreCase("show"))
 				.defineEffectAB(this::onRouletteShow)
+				.applyTo(this);
+		
+		ArgLenTwo<Boolean, Boolean> rouletteShowListCommand = new ArgLenThree<>(Boolean.class, Boolean.class, Boolean.class, true, true,
+				a0 -> a0.equalsIgnoreCase("roulette"),
+				a1 -> a1.equalsIgnoreCase("show"),
+				a2 -> a2.equalsIgnoreCase("list"))
+				.defineEffectABC(this::onRouletteShowList)
 				.applyTo(this);
 		
 		ArgLenTwo<Boolean, Boolean> rouletteSwitchCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, true, true,
@@ -316,19 +325,6 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 			sendRed("Please use an index >= 0!");
 	}
 	
-	public void onRouletteShow(ArgLenTwo<Boolean, Boolean> alen)
-	{
-		Map<ItemStack, Integer> ir = plugin.getItemRoulette().getItemRoulette();
-		if (!ir.isEmpty())
-		{
-			for (ItemStack key : ir.keySet())
-			{
-				sendGold(key + "\nweight: " + ir.get(key));
-			}
-		}
-		else
-			player.sendMessage("You don't have any items set-up!");
-	}
 	
 	public void onRandomAuctionWithPrice(ArgLenThree<Boolean, Boolean, Double> alen)
 	{
@@ -354,6 +350,29 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 	{
 		plugin.getItemRoulette().switchMode();
 		sendGreen("ItemStack is now set up so that " + ChatColor.WHITE + (plugin.getItemRoulette().isRandom() ? "all items have the same probability" : "all items have their own probability") + ChatColor.GREEN + "!");
+	}
+	
+	public void onRouletteShowList(ArgLenGeneric alg)
+	{
+		Map<ItemStack, Integer> ir = plugin.getItemRoulette().getItemRoulette();
+		if (!ir.isEmpty())
+		{
+			for (ItemStack key : ir.keySet())
+			{
+				sendGold(key + "\nweight: " + ir.get(key));
+			}
+		}
+		else
+			player.sendMessage("You don't have any items set-up!");
+	}
+	
+	public void onRouletteShow(ArgLenTwo<Boolean, Boolean> alg)
+	{
+		Optional<Inventory> invo = plugin.getItemRoulette().asInventory();
+		if (invo.isPresent())
+			player.openInventory(invo.get());
+		else
+			sendRed("You don't have any items set-up!");
 	}
 	
 	public void onListAuctions(ArgLenTwo<Boolean, Boolean> alen)
