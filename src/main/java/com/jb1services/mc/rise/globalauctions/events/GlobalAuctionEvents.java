@@ -66,7 +66,7 @@ public class GlobalAuctionEvents extends InventoryEventListener implements Debug
 				}
 				else if (detectRouletteMenu(e))
 				{
-					rouletteMenuProcessing(e);
+					rouletteMenuProcessing(e, player);
 				}
 			}
 		}
@@ -147,9 +147,27 @@ public class GlobalAuctionEvents extends InventoryEventListener implements Debug
 		e.setCancelled(true);
 	}
 	
-	private void rouletteMenuProcessing(InventoryClickEvent e)
+	private int getPage(InventoryClickEvent e)
 	{
-		
+		return Integer.valueOf(GlobalAuctionsPlugin.ROULETTE_MENU_TITLE.getParsedValueUS(0, e.getView().getTitle()));
+	}
+	
+	private void movePage(InventoryClickEvent e, Player p, int delta)
+	{
+		int page = getPage(e);
+		p.openInventory(getPlugin().getItemRoulette().asInventory(page+1).get());
+	}
+	
+	private void rouletteMenuProcessing(InventoryClickEvent e, Player p)
+	{
+		if (e.getCurrentItem().equals(GlobalAuctionsPlugin.ROULETTE_NEXT_PAGE_ICON.getSymbol()))
+		{
+			movePage(e, p, 1);
+		}
+		else if (e.getCurrentItem().equals(GlobalAuctionsPlugin.ROULETTE_PREVIOUS_PAGE_ICON.getSymbol()))
+		{
+			movePage(e, p, -1);
+		}
 	}
 	
 	private void asksSellsMenuProcessing(InventoryClickEvent e, Player player)
@@ -183,7 +201,7 @@ public class GlobalAuctionEvents extends InventoryEventListener implements Debug
 	
 	public boolean detectRouletteMenu(InventoryClickEvent e)
 	{
-		return clickedOnNotOwnedInventory(e) && clickedOnInventoryWhereTitlePred(e, tit -> tit.startsWith(GlobalAuctionsPlugin.ROULETTE_MENU_TITLE));
+		return clickedOnNotOwnedInventory(e) && clickedOnInventoryWhereTitlePred(e, tit -> GlobalAuctionsPlugin.ROULETTE_MENU_TITLE.matches(tit));
 	}
 	
 	@Override

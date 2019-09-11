@@ -1,12 +1,15 @@
 package com.jb1services.mc.rise.globalauctions.structure;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -183,24 +186,53 @@ public class ItemStackRoulette implements ConfigurationSerializable
 		this.random = !random;
 	}
 	
-	public Optional<Inventory> asInventory()
+	public List<ItemStack> getPageItems(int page)
+	{
+		final List<ItemStack> items = itemRoulette.keySet().stream().collect(Collectors.toList());
+		List<ItemStack> retItems = new ArrayList<>();
+		int startIndex = page * 54;
+		if (startIndex < itemRoulette.size())
+		{
+			retItems = items.stream().filter(item -> items.indexOf(item) >= startIndex && items.indexOf(item) < startIndex+54).collect(Collectors.toList());
+			return items;
+		}
+		return retItems;
+	}
+	
+	/**
+	 * Makes the inventory containing the necessary items of the given page.
+	 * @return Empty optional if anything doesn't make sense, valid Inventory otherwise.
+	 */
+	public Optional<Inventory> asInventory(int page)
 	{
 		if (itemRoulette.size() > 0)
 		{
-			int nslots = (int) Math.ceil(itemRoulette.size() / 9.0) * 9;
-			int slots = nslots > 54 ? 54 : nslots;
-			Inventory inv = Bukkit.createInventory(null, slots, GlobalAuctionsPlugin.ROULETTE_MENU_TITLE);
-			int i = 0;
-			for (ItemStack is : itemRoulette.keySet())
+			List<ItemStack> iss = getPageItems(page);
+			if (iss.size() > 0)
 			{
-				ItemStack cnd = is.clone();
-				ChaosBukkit.applyLore(is, Arrays.asList("weight: " + itemRoulette.get(is)));
-				if (i > 54)
-					break;
-				inv.setItem(i, cnd);
-				i++;
+				int nslots = (int) Math.ceil(iss.size() / 9.0) * 9;
+				int slots = nslots > 54 ? 54 : nslots;
+				Inventory inv = Bukkit.createInventory(null, slots, GlobalAuctionsPlugin.ROULETTE_MENU_TITLE.makeFilledOutUS(page+""));
+				for (int i = 0; i < iss.size(); i++)
+				{
+					ItemStack cnd = iss.get(i).clone();
+					if (i < 53)
+					{
+						ChaosBukkit.applyLore(cnd, Arrays.asList("weight: " + itemRoulette.get(cnd)));
+						inv.setItem(i, cnd);
+					}
+					else if (i == 53)
+					{
+						if (page > 0)
+							inv.setItem(53, GlobalAuctionsPlugin.ROULETTE_PREVIOUS_PAGE_ICON.getSymbol());
+						else
+							inv.setItem(i, cnd);
+					}
+					else if (i == 54)
+						inv.setItem(54, GlobalAuctionsPlugin.ROULETTE_NEXT_PAGE_ICON.getSymbol());
+				}
+				return Optional.of(inv);
 			}
-			return Optional.of(inv);
 		}
 		return Optional.empty();
 	}
