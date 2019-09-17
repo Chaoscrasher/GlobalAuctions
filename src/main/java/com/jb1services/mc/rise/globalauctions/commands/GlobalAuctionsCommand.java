@@ -368,7 +368,7 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 	
 	public void onRouletteShow(ArgLenTwo<Boolean, Boolean> alg)
 	{
-		Optional<Inventory> invo = plugin.getItemRoulette().asInventory(0);
+		Optional<Inventory> invo = plugin.getItemRoulette().toInventory(0);
 		if (invo.isPresent())
 			player.openInventory(invo.get());
 		else

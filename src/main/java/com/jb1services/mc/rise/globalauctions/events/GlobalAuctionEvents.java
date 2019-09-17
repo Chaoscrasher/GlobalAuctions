@@ -20,6 +20,9 @@ import com.chaoscrasher.global.CCStringUtils;
 import com.chaoscrasher.utils.Debuggable;
 import com.jb1services.mc.rise.globalauctions.main.GlobalAuctionsPlugin;
 import com.jb1services.mc.rise.globalauctions.structure.Auction;
+import com.jb1services.mc.rise.globalauctions.structure.AuctionsDatabase;
+import com.jb1services.mc.rise.globalauctions.structure.inventories.AsksMenu;
+import com.jb1services.mc.rise.globalauctions.structure.inventories.SellsMenu;
 
 import net.md_5.bungee.api.ChatColor;
 import net.milkbowl.vault.economy.Economy;
@@ -27,10 +30,14 @@ import net.milkbowl.vault.economy.Economy;
 
 public class GlobalAuctionEvents extends InventoryEventListener implements Debuggable {
 
-	public GlobalAuctionEvents(JavaPlugin plugin)
+	private AsksMenu asksMenu;
+	private SellsMenu sellsMenu;
+	
+	public GlobalAuctionEvents(JavaPlugin plugin, AuctionsDatabase adb)
 	{
 		super(plugin);
-		// TODO Auto-generated constructor stub
+		this.asksMenu = new AsksMenu(adb);
+		this.sellsMenu = new SellsMenu(adb);
 	}
 	
 	public GlobalAuctionsPlugin getPlugin()
@@ -56,18 +63,35 @@ public class GlobalAuctionEvents extends InventoryEventListener implements Debug
 				{
 					mainMenuProcessing(e);
 				}
+				else if (asksMenu.detect(e))
+				{
+					asksMenu.onClick(getPlugin(), e);
+					//asksSellsMenuClickProcessing(e, player);
+				}
+ 				else if (sellsMenu.detect(e))
+				{
+					sellsMenu.onClick(getPlugin(), e);
+				}
+				else if (getPlugin().getItemRoulette().detect(e))
+				{
+					getPlugin().getItemRoulette().onClick(getPlugin(), e);
+				}
+				/*
 				else if (detectAskMenu(e))
 				{
-					asksSellsMenuProcessing(e, player);
+					asksSellsMenuClickProcessing(e, player);
 				}
+				*/
+				/*
 				else if (detectSellMenu(e))
 				{
-					asksSellsMenuProcessing(e, player);
+					asksSellsMenuClickProcessing(e, player);
 				}
 				else if (detectRouletteMenu(e))
 				{
 					rouletteMenuProcessing(e, player);
 				}
+				*/
 			}
 		}
 		else
@@ -93,7 +117,7 @@ public class GlobalAuctionEvents extends InventoryEventListener implements Debug
 			ItemStack clicked = e.getCurrentItem();
 			if (clicked.getItemMeta().getDisplayName().equals(GlobalAuctionsPlugin.MAIN_MENU_SELLS_TITLE))
 			{
-				Optional<Inventory> sellso = getPlugin().getAuctionsDatabase().makeSellsInventory();
+				Optional<Inventory> sellso = getPlugin().getAuctionsDatabase().makeSellsInventory(0);
 				if (sellso.isPresent())
 				{
 					player.openInventory(sellso.get());
@@ -103,7 +127,7 @@ public class GlobalAuctionEvents extends InventoryEventListener implements Debug
 			}
 			else if (clicked.getItemMeta().getDisplayName().equals(GlobalAuctionsPlugin.MAIN_MENU_ASKS_TITLE))
 			{
-				Optional<Inventory> askso = getPlugin().getAuctionsDatabase().makeAsksInventory();
+				Optional<Inventory> askso = getPlugin().getAuctionsDatabase().makeAsksInventory(0);
 				if (askso.isPresent())
 				{
 					player.openInventory(askso.get());
@@ -149,28 +173,32 @@ public class GlobalAuctionEvents extends InventoryEventListener implements Debug
 	
 	private int getPage(InventoryClickEvent e)
 	{
-		return Integer.valueOf(GlobalAuctionsPlugin.ROULETTE_MENU_TITLE.getParsedValueUS(0, e.getView().getTitle()));
+		return Integer.valueOf(GlobalAuctionsPlugin.ROULETTE_MENU_FILLER.getParsedValueUS(0, e.getView().getTitle()));
 	}
 	
+	/*
 	private void movePage(InventoryClickEvent e, Player p, int delta)
 	{
 		int page = getPage(e);
-		p.openInventory(getPlugin().getItemRoulette().asInventory(page+1).get());
+		p.openInventory(getPlugin().getItemRoulette().toInventory(page+1).get());
 	}
+	*/
 	
+	/*
 	private void rouletteMenuProcessing(InventoryClickEvent e, Player p)
 	{
-		if (e.getCurrentItem().equals(GlobalAuctionsPlugin.ROULETTE_NEXT_PAGE_ICON.getSymbol()))
+		if (e.getCurrentItem().equals(GlobalAuctionsPlugin.NEXT_PAGE_ICON.getSymbol()))
 		{
 			movePage(e, p, 1);
 		}
-		else if (e.getCurrentItem().equals(GlobalAuctionsPlugin.ROULETTE_PREVIOUS_PAGE_ICON.getSymbol()))
+		else if (e.getCurrentItem().equals(GlobalAuctionsPlugin.PREVIOUS_PAGE_ICON.getSymbol()))
 		{
 			movePage(e, p, -1);
 		}
 	}
+	*/
 	
-	private void asksSellsMenuProcessing(InventoryClickEvent e, Player player)
+	private void asksSellsMenuClickProcessing(InventoryClickEvent e, Player player)
 	{
 		Inventory inv = e.getClickedInventory();
 		ItemStack cs = inv.getItem(e.getSlot());
@@ -180,6 +208,14 @@ public class GlobalAuctionEvents extends InventoryEventListener implements Debug
 			if (auco.isPresent())
 			{
 				auco.get().showToPlayer(getPlugin(), player);
+			}
+			else if (GlobalAuctionsPlugin.NEXT_PAGE_ICON.getSymbol().equals(cs))
+			{
+				
+			}
+			else if (GlobalAuctionsPlugin.PREVIOUS_PAGE_ICON.getSymbol().equals(cs))
+			{
+				
 			}
 		}
 	}
@@ -201,7 +237,7 @@ public class GlobalAuctionEvents extends InventoryEventListener implements Debug
 	
 	public boolean detectRouletteMenu(InventoryClickEvent e)
 	{
-		return clickedOnNotOwnedInventory(e) && clickedOnInventoryWhereTitlePred(e, tit -> GlobalAuctionsPlugin.ROULETTE_MENU_TITLE.matches(tit));
+		return clickedOnNotOwnedInventory(e) && clickedOnInventoryWhereTitlePred(e, tit -> GlobalAuctionsPlugin.ROULETTE_MENU_FILLER.matches(tit));
 	}
 	
 	@Override

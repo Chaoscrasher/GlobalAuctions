@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -186,7 +187,7 @@ public class AuctionsDatabase implements ConfigurationSerializable, Debuggable
 		return asks;
 	}
 	
-	public Optional<Inventory> makeSellsInventory()
+	public Optional<Inventory> makeSellsInventory(int page)
 	{
 		List<Auction> sells = getSells();
 		if (!sells.isEmpty())
@@ -208,7 +209,33 @@ public class AuctionsDatabase implements ConfigurationSerializable, Debuggable
 		return Optional.empty();
 	}
 	
-	public Optional<Inventory> makeAsksInventory()
+	public List<ItemStack> getAskPageItems(int page)
+	{
+		final List<ItemStack> items = getAsks().stream().map(auc -> auc.makeMenuItemStack()).collect(Collectors.toList());
+		List<ItemStack> retItems = new ArrayList<>();
+		int startIndex = page * 54;
+		if (startIndex < items.size())
+		{
+			retItems = items.stream().filter(item -> items.indexOf(item) >= startIndex && items.indexOf(item) < startIndex+54).collect(Collectors.toList());
+			return items;
+		}
+		return retItems;
+	}
+	
+	public List<ItemStack> getSellsPageItems(int page)
+	{
+		final List<ItemStack> items = getSells().stream().map(auc -> auc.makeMenuItemStack()).collect(Collectors.toList());
+		List<ItemStack> retItems = new ArrayList<>();
+		int startIndex = page * 54;
+		if (startIndex < items.size())
+		{
+			retItems = items.stream().filter(item -> items.indexOf(item) >= startIndex && items.indexOf(item) < startIndex+54).collect(Collectors.toList());
+			return items;
+		}
+		return retItems;
+	}
+	
+	public Optional<Inventory> makeAsksInventory(int page)
 	{
 		List<Auction> asks = getAsks();
 		if (!asks.isEmpty())

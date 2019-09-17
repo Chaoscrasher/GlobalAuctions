@@ -24,6 +24,7 @@ import com.jb1services.mc.rise.globalauctions.commands.GlobalAuctionsCommand;
 import com.jb1services.mc.rise.globalauctions.events.GlobalAuctionEvents;
 import com.jb1services.mc.rise.globalauctions.structure.Auction;
 import com.jb1services.mc.rise.globalauctions.structure.AuctionsDatabase;
+import com.jb1services.mc.rise.globalauctions.structure.InventoryNonScrollable;
 import com.jb1services.mc.rise.globalauctions.structure.ItemStackRoulette;
 import com.jb1services.mc.rise.globalauctions.structure.UUIDS;
 
@@ -47,9 +48,11 @@ public class GlobalAuctionsPlugin extends JavaPlugin implements StaticHelpers {
 	public static final String MAIN_MENU_TITLE = INVENTORY_TITLE_PREFIX + "Main Menu";
 	
 	public static final String ROULETTE_PAGE_PH = "{PAGE}";
-	public static final InventoryFiller ROULETTE_MENU_TITLE = new InventoryFiller(INVENTORY_TITLE_PREFIX + "Roulette Menu Page: " + ROULETTE_PAGE_PH);
-	public static final InventoryIcon ROULETTE_NEXT_PAGE_ICON = new InventoryIcon(Material.GOLD_INGOT, CGN+"NEXT");
-	public static final InventoryIcon ROULETTE_PREVIOUS_PAGE_ICON = new InventoryIcon(Material.GOLD_INGOT, CRD+"PREVIOUS");
+	public static final String ROULETTE_MENU_TITLE = INVENTORY_TITLE_PREFIX + "Roulette Menu Page: ";
+	public static final InventoryFiller ROULETTE_MENU_FILLER = new InventoryFiller(ROULETTE_MENU_TITLE + ROULETTE_PAGE_PH);
+	
+	public static final InventoryIcon NEXT_PAGE_ICON = new InventoryIcon(Material.GOLD_INGOT, CGN+"NEXT");
+	public static final InventoryIcon PREVIOUS_PAGE_ICON = new InventoryIcon(Material.GOLD_INGOT, CRD+"PREVIOUS");
 	
 	public static final String MAIN_MENU_SELLS_TITLE = INVENTORY_TITLE_PREFIX + ChatColor.GREEN + "Sells";
 	public static final String MAIN_MENU_ASKS_TITLE = INVENTORY_TITLE_PREFIX + ChatColor.RED + "Asks";
@@ -76,7 +79,6 @@ public class GlobalAuctionsPlugin extends JavaPlugin implements StaticHelpers {
 	{
 		instance = this;
 		new GlobalAuctionsCommand(this);
-		new GlobalAuctionEvents(this);
 		this.saveDefaultConfig();
 		ConfigurationSerialization.registerClass(AuctionsDatabase.class);
 		ConfigurationSerialization.registerClass(Auction.class);
@@ -107,6 +109,8 @@ public class GlobalAuctionsPlugin extends JavaPlugin implements StaticHelpers {
 			}
 		}
 		
+		new GlobalAuctionEvents(this, auctionsDatabase);
+		
 		boolean foundR = getConfig().get("roulette") != null;
 		System.err.println((foundR ? "Did " : "Did not ") + "find roulette in config.");
 		if (foundR)
@@ -130,7 +134,7 @@ public class GlobalAuctionsPlugin extends JavaPlugin implements StaticHelpers {
 			}
 		}
 		
-		System.err.println("GlobalAuctions loaded!");
+		System.err.println("GlobalAuctions loaded! LOLOLOL");
 	}
 
 	@Override

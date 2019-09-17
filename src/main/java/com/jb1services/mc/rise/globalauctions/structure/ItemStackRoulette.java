@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
@@ -16,6 +17,7 @@ import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemorySection;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -23,19 +25,24 @@ import org.bukkit.inventory.meta.ItemMeta;
 import com.chaoscrasher.global.ChaosBukkit;
 import com.jb1services.mc.rise.globalauctions.main.GlobalAuctionsPlugin;
 
-public class ItemStackRoulette implements ConfigurationSerializable
+import net.md_5.bungee.api.ChatColor;
+
+public class ItemStackRoulette extends InventoryScrollableFixedClickable<GlobalAuctionsPlugin> implements ConfigurationSerializable 
 {
 	private boolean random;
 	private Map<ItemStack, Integer> itemRoulette = new HashMap<>();
-
+	
 	public ItemStackRoulette(Map<ItemStack, Integer> itemRoulette)
 	{
-		super();
+		super(GlobalAuctionsPlugin.ROULETTE_MENU_TITLE, GlobalAuctionsPlugin.NEXT_PAGE_ICON, GlobalAuctionsPlugin.PREVIOUS_PAGE_ICON);
+		this.getMyStackz = (e) -> this.getContents(e);
 		this.itemRoulette = itemRoulette;
 	}
 	
 	public ItemStackRoulette(ItemChance... chances)
 	{
+		super(GlobalAuctionsPlugin.ROULETTE_MENU_TITLE, GlobalAuctionsPlugin.NEXT_PAGE_ICON, GlobalAuctionsPlugin.PREVIOUS_PAGE_ICON);
+		this.getMyStackz = (e) -> this.getContents(e);
 		for (ItemChance ic : chances)
 		{
 			itemRoulette.put(ic.getItem(), ic.getWeight());
@@ -50,6 +57,18 @@ public class ItemStackRoulette implements ConfigurationSerializable
 	public Map<ItemStack, Integer> getItemRoulette()
 	{
 		return Collections.unmodifiableMap(itemRoulette);
+	}
+	
+	private List<? extends ItemStackable> getContents(InventoryClickEvent e)
+	{
+		List<InventoryClickable<GlobalAuctionsPlugin>> clickables = new ArrayList<>();
+		for (ItemStack is : itemRoulette.keySet())
+		{
+			clickables.add(new ClickableInventoryIcon(is, Arrays.asList("weight: " + itemRoulette.get(is)), (plug, plyr) -> {
+				return this.toInventory(this.getCurrentPage(e.getView()));
+			}));
+		}
+		return clickables;
 	}
 
 	public static ItemStackRoulette deserialize(Map<String, Object> map)
@@ -199,10 +218,12 @@ public class ItemStackRoulette implements ConfigurationSerializable
 		return retItems;
 	}
 	
+	
 	/**
 	 * Makes the inventory containing the necessary items of the given page.
 	 * @return Empty optional if anything doesn't make sense, valid Inventory otherwise.
 	 */
+	/*
 	public Optional<Inventory> asInventory(int page)
 	{
 		if (itemRoulette.size() > 0)
@@ -212,7 +233,7 @@ public class ItemStackRoulette implements ConfigurationSerializable
 			{
 				int nslots = (int) Math.ceil(iss.size() / 9.0) * 9;
 				int slots = nslots > 54 ? 54 : nslots;
-				Inventory inv = Bukkit.createInventory(null, slots, GlobalAuctionsPlugin.ROULETTE_MENU_TITLE.makeFilledOutUS(page+""));
+				Inventory inv = Bukkit.createInventory(null, slots, GlobalAuctionsPlugin.ROULETTE_MENU_FILLER.makeFilledOutUS(page+""));
 				for (int i = 0; i < iss.size(); i++)
 				{
 					ItemStack cnd = iss.get(i).clone();
@@ -224,17 +245,28 @@ public class ItemStackRoulette implements ConfigurationSerializable
 					else if (i == 53)
 					{
 						if (page > 0)
-							inv.setItem(53, GlobalAuctionsPlugin.ROULETTE_PREVIOUS_PAGE_ICON.getSymbol());
+							inv.setItem(53, GlobalAuctionsPlugin.PREVIOUS_PAGE_ICON.getSymbol());
 						else
 							inv.setItem(i, cnd);
 					}
 					else if (i == 54)
-						inv.setItem(54, GlobalAuctionsPlugin.ROULETTE_NEXT_PAGE_ICON.getSymbol());
+						inv.setItem(54, GlobalAuctionsPlugin.NEXT_PAGE_ICON.getSymbol());
 				}
 				return Optional.of(inv);
 			}
 		}
 		return Optional.empty();
+	}
+	*/
+
+	@Override
+	public List<? extends ItemStackable> getInventoryStacks() {
+		List<ItemStackable> stackables = new ArrayList<>();
+		for (ItemStack is : itemRoulette.keySet())
+		{
+			stackables.add(new ItemStackableStack(is));
+		}
+		return stackables;
 	}
 }
 	
