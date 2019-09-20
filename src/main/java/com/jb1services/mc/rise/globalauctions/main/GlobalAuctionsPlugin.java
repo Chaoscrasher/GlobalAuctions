@@ -48,11 +48,11 @@ public class GlobalAuctionsPlugin extends JavaPlugin implements StaticHelpers {
 	public static final String MAIN_MENU_TITLE = INVENTORY_TITLE_PREFIX + "Main Menu";
 	
 	public static final String ROULETTE_PAGE_PH = "{PAGE}";
-	public static final String ROULETTE_MENU_TITLE = INVENTORY_TITLE_PREFIX + "Roulette Menu Page: ";
+	public static final String ROULETTE_MENU_TITLE = INVENTORY_TITLE_PREFIX + "Roulette Menu: ";
 	public static final InventoryFiller ROULETTE_MENU_FILLER = new InventoryFiller(ROULETTE_MENU_TITLE + ROULETTE_PAGE_PH);
 	
 	public static final InventoryIcon NEXT_PAGE_ICON = new InventoryIcon(Material.GOLD_INGOT, CGN+"NEXT");
-	public static final InventoryIcon PREVIOUS_PAGE_ICON = new InventoryIcon(Material.GOLD_INGOT, CRD+"PREVIOUS");
+	public static final InventoryIcon PREVIOUS_PAGE_ICON = new InventoryIcon(Material.IRON_INGOT, CRD+"PREVIOUS");
 	
 	public static final String MAIN_MENU_SELLS_TITLE = INVENTORY_TITLE_PREFIX + ChatColor.GREEN + "Sells";
 	public static final String MAIN_MENU_ASKS_TITLE = INVENTORY_TITLE_PREFIX + ChatColor.RED + "Asks";
@@ -62,8 +62,6 @@ public class GlobalAuctionsPlugin extends JavaPlugin implements StaticHelpers {
 
 	public static final String AUCTION_ITEM_AUCTION_LORE_PLACEHOLDER = "{ID}";
 	public static final String AUCTION_ITEM_AUCTION_LORE = AUCTION_PREFIX + AUCTION_ITEM_AUCTION_LORE_PLACEHOLDER;
-	
-	
 	
 	public static final int DEFAULT_ITEM_SLOT = 0;
 	public static final int DEFAULT_LORE_SIZE = 3;
@@ -86,6 +84,17 @@ public class GlobalAuctionsPlugin extends JavaPlugin implements StaticHelpers {
 		ConfigurationSerialization.registerClass(ItemStackRoulette.class);
 		vcol = new VaultCollection(this);
 		
+		loadAuctions();
+		
+		new GlobalAuctionEvents(this, auctionsDatabase);
+		
+		loadRoulette();
+		
+		System.err.println("GlobalAuctions loaded!");
+	}
+	
+	public void loadAuctions()
+	{
 		boolean foundA = getConfig().getConfigurationSection("auctions") != null;
 		System.err.println((foundA ? "Did " : "Did not ") + "find auctions in config.");
 		if (foundA)
@@ -108,9 +117,10 @@ public class GlobalAuctionsPlugin extends JavaPlugin implements StaticHelpers {
 				e.printStackTrace();
 			}
 		}
-		
-		new GlobalAuctionEvents(this, auctionsDatabase);
-		
+	}
+	
+	public void loadRoulette()
+	{
 		boolean foundR = getConfig().get("roulette") != null;
 		System.err.println((foundR ? "Did " : "Did not ") + "find roulette in config.");
 		if (foundR)
@@ -133,22 +143,28 @@ public class GlobalAuctionsPlugin extends JavaPlugin implements StaticHelpers {
 				e.printStackTrace();
 			}
 		}
-		
-		System.err.println("GlobalAuctions loaded! LOLOLOL");
 	}
 
 	@Override
 	public void onDisable()
 	{
-		try
-		{
+		saveAuctions();
+		saveRoulette();
+	}
+	
+	public void saveAuctions()
+	{
+		try {
 			auctionsDatabase.save(this);
-			itemRoulette.save(this);
-		} catch (IOException e)
-		{
+		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	public void saveRoulette()
+	{
+		itemRoulette.save(this);
 	}
 	
 	public void loadAuctionsDatabase() throws FileNotFoundException, IOException, InvalidConfigurationException

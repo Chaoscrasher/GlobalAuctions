@@ -17,6 +17,7 @@ import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemorySection;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -64,8 +65,28 @@ public class ItemStackRoulette extends InventoryScrollableFixedClickable<GlobalA
 		List<InventoryClickable<GlobalAuctionsPlugin>> clickables = new ArrayList<>();
 		for (ItemStack is : itemRoulette.keySet())
 		{
-			clickables.add(new ClickableInventoryIcon(is, Arrays.asList("weight: " + itemRoulette.get(is)), (plug, plyr) -> {
-				return this.toInventory(this.getCurrentPage(e.getView()));
+			clickables.add(new ClickableInventoryIcon<GlobalAuctionsPlugin>(is, Arrays.asList("weight: " + itemRoulette.get(is)), (plug, ev) -> 
+			{
+				System.out.println("CLICKED ON ITEM " + is + " WITH WEIGHT " + itemRoulette.get(is) + " ACTION: " + ev.getAction());
+				if (ev.getAction().equals(InventoryAction.PICKUP_HALF))
+				{
+					System.out.println("Trying to remove item " + is);
+					itemRoulette.remove(is);
+					if (itemRoulette.size() > 0)
+					{
+						return this.toInventory(getCurrentPage(e.getView()));
+					}
+					else
+						return null;
+				}
+				else if (ev.getAction().equals(InventoryAction.SWAP_WITH_CURSOR))
+				{
+					ItemStack cursor = e.getCursor();
+					System.out.println("Trying to add item " + cursor);
+					itemRoulette.put(e.getCursor(), 0);
+					return this.toInventory(getCurrentPage(e.getView()));
+				}
+				return Optional.empty();
 			}));
 		}
 		return clickables;
@@ -217,7 +238,11 @@ public class ItemStackRoulette extends InventoryScrollableFixedClickable<GlobalA
 		}
 		return retItems;
 	}
-	
+
+	public void clear()
+	{
+		itemRoulette.clear();
+	}
 	
 	/**
 	 * Makes the inventory containing the necessary items of the given page.
@@ -261,12 +286,7 @@ public class ItemStackRoulette extends InventoryScrollableFixedClickable<GlobalA
 
 	@Override
 	public List<? extends ItemStackable> getInventoryStacks() {
-		List<ItemStackable> stackables = new ArrayList<>();
-		for (ItemStack is : itemRoulette.keySet())
-		{
-			stackables.add(new ItemStackableStack(is));
-		}
-		return stackables;
+		return getContents(null);
 	}
 }
 	

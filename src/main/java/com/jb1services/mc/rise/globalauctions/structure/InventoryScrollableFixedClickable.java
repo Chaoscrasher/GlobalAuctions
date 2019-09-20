@@ -49,11 +49,15 @@ public abstract class InventoryScrollableFixedClickable<PLUGIN> extends Inventor
 		else
 		{
 			int slot = e.getRawSlot();
-			ItemStackable is = this.getMyStackz.apply(e).get(slot);
-			if (is != null && is instanceof InventoryClickable)
+			List<? extends ItemStackable> list = this.getMyStackz.apply(e);
+			if (list.size() > slot)
 			{
-				InventoryClickable<PLUGIN> ic = (InventoryClickable<PLUGIN>) is;
-				return ic.onClick(plugin, e);
+				ItemStackable is = list.get(slot);
+				if (is != null && is instanceof InventoryClickable)
+				{
+					InventoryClickable<PLUGIN> ic = (InventoryClickable<PLUGIN>) is;
+					return ic.onClick(plugin, e);
+				}
 			}
 		}
 		return Optional.empty();

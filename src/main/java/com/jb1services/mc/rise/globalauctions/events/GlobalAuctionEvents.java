@@ -65,16 +65,32 @@ public class GlobalAuctionEvents extends InventoryEventListener implements Debug
 				}
 				else if (asksMenu.detect(e))
 				{
-					asksMenu.onClick(getPlugin(), e);
-					//asksSellsMenuClickProcessing(e, player);
+					Optional<Inventory> nInv = asksMenu.onClick(getPlugin(), e);
+					if (nInv.isPresent())
+					{
+						player.openInventory(nInv.get());
+					}
 				}
  				else if (sellsMenu.detect(e))
 				{
-					sellsMenu.onClick(getPlugin(), e);
+					Optional<Inventory> nInv = sellsMenu.onClick(getPlugin(), e);
+					if (nInv.isPresent())
+					{
+						player.openInventory(nInv.get());
+					}
 				}
 				else if (getPlugin().getItemRoulette().detect(e))
 				{
-					getPlugin().getItemRoulette().onClick(getPlugin(), e);
+					Optional<Inventory> nInv = getPlugin().getItemRoulette().onClick(getPlugin(), e);
+					if (nInv != null)
+					{
+						if (nInv.isPresent())
+						{
+							player.openInventory(nInv.get());
+						}
+					}
+					else
+						player.closeInventory();
 				}
 				/*
 				else if (detectAskMenu(e))
@@ -117,7 +133,7 @@ public class GlobalAuctionEvents extends InventoryEventListener implements Debug
 			ItemStack clicked = e.getCurrentItem();
 			if (clicked.getItemMeta().getDisplayName().equals(GlobalAuctionsPlugin.MAIN_MENU_SELLS_TITLE))
 			{
-				Optional<Inventory> sellso = getPlugin().getAuctionsDatabase().makeSellsInventory(0);
+				Optional<Inventory> sellso = sellsMenu.toInventory(0);//getPlugin().getAuctionsDatabase().makeSellsInventory(0);
 				if (sellso.isPresent())
 				{
 					player.openInventory(sellso.get());
@@ -127,7 +143,7 @@ public class GlobalAuctionEvents extends InventoryEventListener implements Debug
 			}
 			else if (clicked.getItemMeta().getDisplayName().equals(GlobalAuctionsPlugin.MAIN_MENU_ASKS_TITLE))
 			{
-				Optional<Inventory> askso = getPlugin().getAuctionsDatabase().makeAsksInventory(0);
+				Optional<Inventory> askso = asksMenu.toInventory(0);//getPlugin().getAuctionsDatabase().makeAsksInventory(0);
 				if (askso.isPresent())
 				{
 					player.openInventory(askso.get());

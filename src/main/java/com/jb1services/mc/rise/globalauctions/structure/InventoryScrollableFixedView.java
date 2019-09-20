@@ -63,29 +63,37 @@ public abstract class InventoryScrollableFixedView extends Inventoryable
 	
 	public Optional<Inventory> toInventory(int page)
 	{
-		System.out.println("KEK");
 		if (page >= 0)
 		{
 			List<ItemStack> stackz = getStacks();
 			int sslot = page*54;
 			if (stackz.size() > sslot)
 			{
-				int totalSlots = stackz.size() - sslot;
-				int buttonSlots = (totalSlots > 54 ? 1 : 0) + (sslot > 53 ? 1 : 0); 
-				int actualSize = (int) (9 * Math.ceil(totalSlots / 9.0));
-				actualSize = actualSize > MAX_PAGE_SIZE ? MAX_PAGE_SIZE : actualSize;
-				Inventory inv = Bukkit.createInventory(getHolder(), actualSize, getFullTitle(page));
-				
+				int overallItemCount = stackz.size() - sslot;
+				boolean nextButton = overallItemCount > 54;
+				boolean previousButton = sslot > 53;
+				int buttonSlots = (nextButton ? 1 : 0) + (previousButton ? 1 : 0); 
+				int minInvSize = (int) (9 * Math.ceil(overallItemCount / 9.0));
+				minInvSize = minInvSize > MAX_PAGE_SIZE ? MAX_PAGE_SIZE : minInvSize;
+				Inventory inv = Bukkit.createInventory(getHolder(), minInvSize, getFullTitle(page));
+
 				int i = 0;
-				while (i < actualSize - buttonSlots)
+				if (previousButton)
+				{
+					inv.setItem(i, backwardIcon.getSymbol());
+					i++;
+				}
+				
+				while (i < minInvSize - buttonSlots && i < overallItemCount)
 				{
 					inv.setItem(i, stackz.get(sslot+i));
 					i++;
 				}
 				
-				for (int j = 0; j < buttonSlots;  j++)
+				if (nextButton)
 				{
-					inv.setItem(i + j, stackz.get(sslot + i + j));
+					inv.setItem(i, forwardIcon.getSymbol());
+					i++;
 				}
 				
 				return Optional.of(inv);
@@ -109,12 +117,12 @@ public abstract class InventoryScrollableFixedView extends Inventoryable
 	{
 		if (isForwardClick(e))
 		{
-			int page = Integer.valueOf(filler.getParsedValueUS(0));
+			int page = Integer.valueOf(filler.getParsedValueUS(0, e.getView().getTitle()));
 			return toInventory(page+1);
 		}
 		else if (isBackwardClick(e))
 		{
-			int page = Integer.valueOf(filler.getParsedValueUS(0));
+			int page = Integer.valueOf(filler.getParsedValueUS(0, e.getView().getTitle()));
 			return toInventory(page-1);
 		}
 		return Optional.empty();

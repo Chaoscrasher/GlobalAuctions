@@ -29,6 +29,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 
@@ -117,7 +118,7 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 				.defineEffectAB(this::onRouletteShow)
 				.applyTo(this);
 		
-		ArgLenTwo<Boolean, Boolean> rouletteShowListCommand = new ArgLenThree<>(Boolean.class, Boolean.class, Boolean.class, true, true,
+		ArgLenTwo<Boolean, Boolean> rouletteShowListCommand = new ArgLenThree<>(Boolean.class, Boolean.class, Boolean.class, false, true,
 				a0 -> a0.equalsIgnoreCase("roulette"),
 				a1 -> a1.equalsIgnoreCase("show"),
 				a2 -> a2.equalsIgnoreCase("list"))
@@ -130,7 +131,37 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 				.defineEffectAB(this::onRouletteSwitch)
 				.applyTo(this);
 		
-		ArgLenTwo<Boolean, Boolean> listAuctionsCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, true, true,
+		ArgLenTwo<Boolean, Boolean> rouletteReloadCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, true, true,
+				a0 -> a0.equalsIgnoreCase("roulette"),
+				a1 -> a1.equalsIgnoreCase("reload"))
+				.defineEffectAB(this::onRouletteShow)
+				.applyTo(this);
+		
+		ArgLenTwo<Boolean, Boolean> rouletteClearCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, false, true,
+				a0 -> a0.equalsIgnoreCase("roulette"),
+				a1 -> a1.equalsIgnoreCase("clear"))
+				.defineEffectAB(this::onRouletteClear)
+				.applyTo(this);
+		
+		ArgLenTwo<Boolean, Boolean> rouletteSaveCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, false, true,
+				a0 -> a0.equalsIgnoreCase("roulette"),
+				a1 -> a1.equalsIgnoreCase("save"))
+				.defineEffectAB(this::onRouletteSave)
+				.applyTo(this);
+		
+		ArgLenTwo<Boolean, Boolean> rouletteSaveCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, false, true,
+				a0 -> a0.equalsIgnoreCase("roulette"),
+				a1 -> a1.equalsIgnoreCase("load"))
+				.defineEffectAB(this::onRouletteLoad)
+				.applyTo(this);
+		
+		ArgLenThree<Boolean, Boolean, Integer> rouletteTestCommand = new ArgLenThree<>(Boolean.class, Boolean.class, Integer.class, false, true,
+				a0 -> a0.equalsIgnoreCase("roulette"),
+				a1 -> a1.equalsIgnoreCase("test"))
+				.defineEffectABC(this::onRouletteTest)
+				.applyTo(this);
+		
+		ArgLenTwo<Boolean, Boolean> listAuctionsCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, false, true,
 				a0 -> a0.equalsIgnoreCase("list"),
 				a1 -> a1.contains("auc"))
 				.defineEffectAB(this::onListAuctions)
@@ -280,28 +311,27 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 		}
 	}
 	
-	public void onRouletteAdd(ArgLenTwo<Boolean, Boolean> alen)
+	private void addToRoulette(int weight)
 	{
-		if (player.getInventory().getItemInMainHand() != null)
+		if (player.getInventory().getItemInMainHand() != null && !player.getInventory().getItemInMainHand().getType().equals(Material.AIR))
 		{
 			plugin.getItemRoulette().add(player.getInventory().getItemInMainHand(), 0);
-			sendGreen("Item added with weight " + 0 + "!");
+			sendGreen("Item added with weight " + weight + "!");
 		}
 		else
 			sendRed("You need an item in hand!");
+	}
+	
+	public void onRouletteAdd(ArgLenTwo<Boolean, Boolean> alen)
+	{
+		addToRoulette(0);
 	}
 	
 	public void onRouletteAddWithWeight(ArgLenThree<Boolean, Boolean, Integer> alen)
 	{
 		if (alen.getDataCNonOptional() >= 0)
 		{
-			if (player.getInventory().getItemInMainHand() != null)
-			{
-				plugin.getItemRoulette().add(player.getInventory().getItemInMainHand(), alen.getDataCNonOptional());
-				sendGreen("Item added with weight " + alen.getDataCNonOptional() + "!");
-			}
-			else
-				sendRed("You need an item in hand!");
+			addToRoulette(alen.getDataCNonOptional());
 		}
 		else
 			sendRed("Please use a weight >= 0!");
@@ -373,6 +403,51 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 			player.openInventory(invo.get());
 		else
 			sendRed("You don't have any items set-up!");
+	}
+	
+	public void onRouletteSave(ArgLenTwo<Boolean, Boolean> alg)
+	{
+		plugin.saveRoulette();
+	}
+	
+	public void onRouletteLoad(ArgLenTwo<Boolean, Boolean> alg)
+	{
+		plugin.loadRoulette();
+	}
+	
+	public void onRouletteClear(ArgLenTwo<Boolean, Boolean> alg)
+	{
+		plugin.getItemRoulette().clear();
+		sender.sendMessage("Roulette cleared!");
+	}
+	
+	public void onRouletteTest(ArgLenThree<Boolean, Boolean, Integer> alg)
+	{
+		sender.sendMessage("Adding " + alg.getDataCNonOptional() + " test values to item roulette!");
+		Random rnd = new Random();
+		for (int i = 1; i <= alg.getDataCNonOptional(); i++)
+		{
+			Material mat = Material.values()[rnd.nextInt(Material.values().length)];
+			while (mat.equals(Material.AIR))
+				mat = Material.values()[rnd.nextInt(Material.values().length)];
+			plugin.getItemRoulette().add(new ItemStack(mat, rnd.nextInt(63)+1), rnd.nextInt(1000));
+		}
+	}
+	
+	public void onRouletteReload(ArgLenTwo<Boolean, Boolean> alg)
+	{
+		plugin.reloadConfig();
+		try
+		{
+			plugin.loadItemRoulette();
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		} catch (InvalidConfigurationException e) 
+		{
+			e.printStackTrace();
+		}
 	}
 	
 	public void onListAuctions(ArgLenTwo<Boolean, Boolean> alen)
