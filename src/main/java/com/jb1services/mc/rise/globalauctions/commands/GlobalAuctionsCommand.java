@@ -149,7 +149,7 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 				.defineEffectAB(this::onRouletteSave)
 				.applyTo(this);
 		
-		ArgLenTwo<Boolean, Boolean> rouletteSaveCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, false, true,
+		ArgLenTwo<Boolean, Boolean> rouletteLoadCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, false, true,
 				a0 -> a0.equalsIgnoreCase("roulette"),
 				a1 -> a1.equalsIgnoreCase("load"))
 				.defineEffectAB(this::onRouletteLoad)
