@@ -1,24 +1,13 @@
 package com.jb1services.mc.rise.globalauctions.structure;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.inventory.ItemStack;
-
-import com.chaoscrasher.inventory.InventoryFiller;
 import com.chaoscrasher.inventory.InventoryIcon;
-import com.jb1services.mc.rise.globalauctions.main.GlobalAuctionsPlugin;
 
 public abstract class InventoryScrollableFixedClickable<PLUGIN> extends InventoryScrollableFixedView
 {	

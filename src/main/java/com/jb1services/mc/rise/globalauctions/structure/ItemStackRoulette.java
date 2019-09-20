@@ -92,28 +92,6 @@ public class ItemStackRoulette extends InventoryScrollableFixedClickable<GlobalA
 		return clickables;
 	}
 
-	public static ItemStackRoulette deserialize(Map<String, Object> map)
-	{
-		ItemStackRoulette ir = new ItemStackRoulette();
-		for (String str : map.keySet())
-		{
-			Object val = map.get(str);
-			if (val instanceof Map)
-			{
-				Map<String, Object> imap = (Map<String, Object>) val;
-				
-				ir.add((ItemStack) imap.get("item"), (Integer) imap.get("weight"));
-				/*ItemStack is = (ItemStack) imap.get("item");
-				Integer weight = (Integer) imap.get("weight")
-				ir.add(imap.get, weight);
-				return tR*/
-			}
-		}
-		if (map.isEmpty())
-			return new ItemStackRoulette();
-		return ir;
-	}
-	
 	public void add(ItemStack is, int weight)
 	{
 		itemRoulette.put(is, weight);
@@ -159,14 +137,26 @@ public class ItemStackRoulette extends InventoryScrollableFixedClickable<GlobalA
 		Map<String, Object> map = new HashMap<>();
 		int count = 0;
 		map.put("random", random);
+		map.put("itemRoulette", itemRoulette);
+		/*
 		for (ItemStack is : itemRoulette.keySet())
 		{
-			map.put(count+"", subMap(is));
+			map.put(is, itemRoulette.get(is));
 			count++;
 		}
+		*/
 		return map;
 	}
 	
+	public static ItemStackRoulette deserialize(Map<String, Object> map)
+	{
+		ItemStackRoulette ir = new ItemStackRoulette();
+		ir.random = (boolean) map.get("random");
+		ir.itemRoulette = (Map<ItemStack, Integer>) map.get("itemRoulette");
+		return ir;
+	}
+	
+	/*
 	public Map<String, Object> subMap(ItemStack is)
 	{
 		Map<String, Object> map = new HashMap<>();
@@ -174,6 +164,7 @@ public class ItemStackRoulette extends InventoryScrollableFixedClickable<GlobalA
 		map.put("weight", itemRoulette.get(is));
 		return map;
 	}
+	*/
 	
 	public void save(GlobalAuctionsPlugin plugin)
 	{

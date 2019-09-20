@@ -16,8 +16,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.chaoscrasher.inventory.InventoryFiller;
 import com.chaoscrasher.inventory.InventoryIcon;
+import com.chaoscrasher.inventory.InventoryTitleFiller;
 import com.chaoscrasher.utils.StaticHelpers;
 import com.chaoscrasher.utils.VaultCollection;
 import com.jb1services.mc.rise.globalauctions.commands.GlobalAuctionsCommand;
@@ -49,7 +49,7 @@ public class GlobalAuctionsPlugin extends JavaPlugin implements StaticHelpers {
 	
 	public static final String ROULETTE_PAGE_PH = "{PAGE}";
 	public static final String ROULETTE_MENU_TITLE = INVENTORY_TITLE_PREFIX + "Roulette Menu: ";
-	public static final InventoryFiller ROULETTE_MENU_FILLER = new InventoryFiller(ROULETTE_MENU_TITLE + ROULETTE_PAGE_PH);
+	public static final InventoryTitleFiller ROULETTE_MENU_FILLER = new InventoryTitleFiller(ROULETTE_MENU_TITLE + ROULETTE_PAGE_PH);
 	
 	public static final InventoryIcon NEXT_PAGE_ICON = new InventoryIcon(Material.GOLD_INGOT, CGN+"NEXT");
 	public static final InventoryIcon PREVIOUS_PAGE_ICON = new InventoryIcon(Material.IRON_INGOT, CRD+"PREVIOUS");

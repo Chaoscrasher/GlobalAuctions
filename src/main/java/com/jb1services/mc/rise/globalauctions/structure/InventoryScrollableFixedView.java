@@ -16,15 +16,15 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 
-import com.chaoscrasher.inventory.InventoryFiller;
 import com.chaoscrasher.inventory.InventoryIcon;
+import com.chaoscrasher.inventory.InventoryTitleFiller;
 
 public abstract class InventoryScrollableFixedView extends Inventoryable
 {
 	private static final String TITLE_PAGE_SEPERATOR = ": ";
 	
 	private final String baseTitle;
-	protected final InventoryFiller filler;
+	protected final InventoryTitleFiller filler;
 	private final InventoryIcon forwardIcon;
 	private final InventoryIcon backwardIcon;
 	
@@ -35,7 +35,7 @@ public abstract class InventoryScrollableFixedView extends Inventoryable
 		this.baseTitle = baseTitle;
 		this.forwardIcon = forwardIcon;
 		this.backwardIcon = backwardIcon;
-		this.filler = new InventoryFiller(baseTitle + TITLE_PAGE_SEPERATOR + "page {PAGE}");
+		this.filler = new InventoryTitleFiller(baseTitle + TITLE_PAGE_SEPERATOR + "page {PAGE}");
 		this.getMyStackz = getMyStackz;
 	}
 	
