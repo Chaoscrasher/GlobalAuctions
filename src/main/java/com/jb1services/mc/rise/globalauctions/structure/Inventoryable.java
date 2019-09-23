@@ -20,7 +20,7 @@ public abstract class Inventoryable
 	
 	public List<ItemStack> getStacks()
 	{
-		return getInventoryStacks().stream().map(isa -> isa.stack()).collect(Collectors.toList());
+		return getInventoryStacks().stream().map(isa -> isa.stack()).filter(is -> is != null).collect(Collectors.toList());
 	}
 	
 	abstract String getTitle();
