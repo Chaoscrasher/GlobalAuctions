@@ -298,4 +298,9 @@ public class AuctionsDatabase implements ConfigurationSerializable, Debuggable
 		// TODO Auto-generated method stub
 		return false;
 	}
+
+	public void clear() 
+	{
+		this.auctions.clear();
+	}
 }
