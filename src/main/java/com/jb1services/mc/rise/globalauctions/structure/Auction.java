@@ -20,6 +20,7 @@ import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import com.chaoscrasher.global.ChaosBukkit;
 import com.jb1services.mc.rise.globalauctions.main.GlobalAuctionsPlugin;
 
 import net.md_5.bungee.api.ChatColor;
@@ -28,7 +29,7 @@ import net.milkbowl.vault.economy.Economy;
 public class Auction implements ConfigurationSerializable, InventoryClickable<GlobalAuctionsPlugin>
 {
 	private UUIDS creator;
-	private UUIDS uuid;
+	private Integer id;
 	private ItemStack auctionedItem;
 	private double price;
 	private boolean isAsk;
@@ -36,25 +37,25 @@ public class Auction implements ConfigurationSerializable, InventoryClickable<Gl
 	public Auction(Map<String, Object> map)
 	{
 		this.creator = (UUIDS) map.get("creator");
-		this.uuid = (UUIDS) map.get("uuid");
+		this.id = (Integer) map.get("id");
 		this.auctionedItem = (ItemStack) map.get("auctionedItem");
 		this.price = (double) map.get("price");
 		this.isAsk = (boolean) map.get("isAsk");
 	}
 	
-	public Auction(UUID creator, ItemStack itemStack, double price, boolean ask)
+	public Auction(AuctionsDatabase adb, UUID creator, ItemStack itemStack, double price, boolean ask)
 	{
-		this(UUIDS.of(creator), UUIDS.randomUUIDS(), itemStack, price, ask);
+		this(adb, UUIDS.of(creator), itemStack, price, ask);
 	}
 	
-	public Auction(UUID creator, ItemStack itemStack, double price)
+	public Auction(AuctionsDatabase adb, UUID creator, ItemStack itemStack, double price)
 	{
-		this(UUIDS.of(creator), UUIDS.randomUUIDS(), itemStack, price, false);
+		this(adb, UUIDS.of(creator), itemStack, price, false);
 	}
 	
-	public Auction(UUIDS creator, ItemStack itemStack, double price, boolean ask)
+	public Auction(AuctionsDatabase adb, UUIDS creator, ItemStack itemStack, double price, boolean ask)
 	{
-		this(creator, UUIDS.randomUUIDS(), itemStack, price, ask);
+		this(creator, adb.nextFreeId(), itemStack, price, ask);
 	}
 
 	/*
@@ -64,11 +65,12 @@ public class Auction implements ConfigurationSerializable, InventoryClickable<Gl
 	}
 	*/
 	
-	private Auction(UUIDS creator, UUIDS uuid, ItemStack itemStack, double price, boolean isAsk)
+	private Auction(UUIDS creator, Integer id, ItemStack itemStack, double price, boolean isAsk)
 	{
-		super();
 		this.creator = creator;
-		this.uuid = uuid;
+		this.id = id;
+		if (itemStack.getType().equals(Material.AIR))
+			throw new IllegalStateException("Cannot auction item stack of Material.AIR!");
 		this.auctionedItem = itemStack;
 		this.price = price;
 		this.isAsk = isAsk;
@@ -84,9 +86,9 @@ public class Auction implements ConfigurationSerializable, InventoryClickable<Gl
 		return isAsk;
 	}
 
-	public UUIDS getUuid()
+	public int getId()
 	{
-		return uuid;
+		return id;
 	}
 
 	public ItemStack getAuctionedItem()
@@ -112,7 +114,7 @@ public class Auction implements ConfigurationSerializable, InventoryClickable<Gl
 	
 	public void save(ConfigurationSection csec)
 	{
-		csec.set("uuid", uuid);
+		csec.set("id", id);
 		csec.set("item", auctionedItem.serialize());
 		csec.set("price", price);
 		csec.set("sell", isAsk);
@@ -121,11 +123,11 @@ public class Auction implements ConfigurationSerializable, InventoryClickable<Gl
 	public static Auction load(ConfigurationSection csec)
 	{
 		UUIDS creator = UUIDS.fromString(csec.getString("creator"));
-		UUIDS uuid = UUIDS.fromString(csec.getString("uuid"));
+		int id = csec.getInt("id");
 		ItemStack is = ItemStack.deserialize(csec.getConfigurationSection("item").getValues(true));
 		double price = csec.getDouble("price");
 		boolean sell = csec.getBoolean("sell");
-		return new Auction(creator, uuid, is, price, sell);
+		return new Auction(creator, id, is, price, sell);
 	}
 
 	@Override
@@ -133,7 +135,7 @@ public class Auction implements ConfigurationSerializable, InventoryClickable<Gl
 	{
 		Map<String, Object> hm = new HashMap<>();
 		hm.put("creator", creator);
-		hm.put("uuid", uuid);
+		hm.put("id", id);
 		hm.put("auctionedItem", auctionedItem);
 		hm.put("price", price);
 		hm.put("isAsk", isAsk);
@@ -144,11 +146,16 @@ public class Auction implements ConfigurationSerializable, InventoryClickable<Gl
 	{
 		if (lore.size() == GlobalAuctionsPlugin.DEFAULT_LORE_SIZE)
 		{
-			UUIDS plyr = UUIDS.fromString(lore.get(0).substring(lore.get(0).indexOf(GlobalAuctionsPlugin.PLAYER_PREFIX) + GlobalAuctionsPlugin.PLAYER_PREFIX.length()));
-			UUIDS aucuid = UUIDS.fromString(lore.get(1).substring(lore.get(1).indexOf(GlobalAuctionsPlugin.AUCTION_PREFIX) + GlobalAuctionsPlugin.AUCTION_PREFIX.length()));
-//			double price = Double.valueOf(lore.get(2).substring(lore.get(2).indexOf(GlobalAuctionsPlugin.PRICE_PREFIX) + GlobalAuctionsPlugin.PRICE_PREFIX.length()));
-			Optional<Auction> auco = db.getAuction(plyr, aucuid);
-			return auco;
+			String pname = lore.get(0).substring(lore.get(0).indexOf(GlobalAuctionsPlugin.PLAYER_PREFIX) + GlobalAuctionsPlugin.PLAYER_PREFIX.length());
+			int aucid = Integer.valueOf(lore.get(1).substring(lore.get(1).indexOf(GlobalAuctionsPlugin.AUCTION_PREFIX) + GlobalAuctionsPlugin.AUCTION_PREFIX.length()));
+			double price = Double.valueOf(lore.get(2).substring(lore.get(2).indexOf(GlobalAuctionsPlugin.PRICE_PREFIX) + GlobalAuctionsPlugin.PRICE_PREFIX.length()));
+			Optional<OfflinePlayer> op = ChaosBukkit.getOfflinePlayerByName(pname);
+			if (op.isPresent())
+			{
+				Optional<Auction> auco = db.getAuction(UUIDS.of(op.get().getUniqueId()), aucid, price);
+				return auco;
+			}
+			return Optional.empty();
 		}
 		else
 			throw new IllegalStateException("Lore is not of size "+GlobalAuctionsPlugin.DEFAULT_LORE_SIZE+"!");
@@ -156,7 +163,7 @@ public class Auction implements ConfigurationSerializable, InventoryClickable<Gl
 	
 	private ItemStack makeBuyItem()
 	{
-		List<String> lore = Arrays.asList(GlobalAuctionsPlugin.PLAYER_PREFIX + creator.toString(), GlobalAuctionsPlugin.AUCTION_PREFIX + uuid.toString(), GlobalAuctionsPlugin.PRICE_PREFIX + price);
+		List<String> lore = Arrays.asList(GlobalAuctionsPlugin.PLAYER_PREFIX + getCreatorAsOfflinePlayer().getName(), GlobalAuctionsPlugin.AUCTION_PREFIX + id, GlobalAuctionsPlugin.PRICE_PREFIX + price);
 		ItemStack is = new ItemStack(Material.GOLD_INGOT);
 		ItemMeta im = is.getItemMeta();
 		im.setLore(lore);
@@ -178,21 +185,46 @@ public class Auction implements ConfigurationSerializable, InventoryClickable<Gl
 		return Bukkit.getOfflinePlayer(creator.getUUID());
 	}
 	
+	
 	@Override
-	public int hashCode()
-	{
+	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((auctionedItem == null) ? 0 : auctionedItem.hashCode());
 		result = prime * result + ((creator == null) ? 0 : creator.hashCode());
+		result = prime * result + ((id == null) ? 0 : id.hashCode());
 		result = prime * result + (isAsk ? 1231 : 1237);
 		long temp;
 		temp = Double.doubleToLongBits(price);
 		result = prime * result + (int) (temp ^ (temp >>> 32));
-		result = prime * result + ((uuid == null) ? 0 : uuid.hashCode());
 		return result;
 	}
-	
+
+	@Override
+	public boolean equals(Object thato)
+	{
+		if (this == thato)
+			return true;
+		if (thato != null)
+		{
+			if (thato.getClass().equals(this.getClass()))
+			{
+				Auction that = (Auction) thato;
+				if (creator == that.creator || creator.equals(that.creator))
+				{
+					if (id == that.id)
+					{
+						if (auctionedItem == that.auctionedItem || auctionedItem.equals(that.auctionedItem))
+						{
+							return price == that.price && isAsk == that.isAsk;
+						}
+					}
+				}
+			}
+		}
+		return false;
+	}
+
 	private boolean finalizeAsk(Economy eco, AuctionsDatabase db, Player player)
 	{
 		if (player.getInventory().contains(auctionedItem))
@@ -204,7 +236,7 @@ public class Auction implements ConfigurationSerializable, InventoryClickable<Gl
 				{
 					eco.withdrawPlayer(op, getPrice());
 					player.getInventory().remove(auctionedItem);
-					op.getPlayer().sendMessage(ChatColor.GREEN + player.getName() + " completed your ask " + getUuid() + "\n" + 
+					op.getPlayer().sendMessage(ChatColor.GREEN + player.getName() + " completed your ask " + id + "\n" + 
 							getAuctionedItem().getType() + "x " + getAuctionedItem().getAmount() + "\nfor " +
 							getPrice());
 					op.getPlayer().getInventory().addItem(getAuctionedItem());
@@ -231,7 +263,7 @@ public class Auction implements ConfigurationSerializable, InventoryClickable<Gl
 			{
 				eco.withdrawPlayer(player, getPrice());
 				op.getPlayer().getInventory().addItem(getAuctionedItem());
-				op.getPlayer().sendMessage(ChatColor.GREEN + player.getName() + " completed your auction " + getUuid() + "\n" + 
+				op.getPlayer().sendMessage(ChatColor.GREEN + player.getName() + " completed your auction " + id + "\n" + 
 						getAuctionedItem().getType() + "x " + getAuctionedItem().getAmount() + "\nfor " +
 						getPrice());
 				player.sendMessage(executedSuccess());
@@ -247,7 +279,7 @@ public class Auction implements ConfigurationSerializable, InventoryClickable<Gl
 	
 	private String executedSuccess()
 	{
-		return ChatColor.GREEN + "You completed "+(isAsk ? ChatColor.DARK_GREEN + "Ask " : ChatColor.RED + "Sell ") + " \n" + ChatColor.GOLD + getUuid() + ChatColor.GREEN + "\nby " + getCreatorAsOfflinePlayer().getName() + "!";
+		return ChatColor.GREEN + "You completed "+(isAsk ? ChatColor.DARK_GREEN + "Ask " : ChatColor.RED + "Sell ") + " \n" + ChatColor.GOLD + id + ChatColor.GREEN + "\nby " + getCreatorAsOfflinePlayer().getName() + "!";
 	}
 
 	public boolean finalizeAuction(InventoryView iv, GlobalAuctionsPlugin plugin, Player player)
@@ -272,43 +304,24 @@ public class Auction implements ConfigurationSerializable, InventoryClickable<Gl
 		return res;
 	}
 
-	@Override
-	public boolean equals(Object thato)
-	{
-		if (this == thato)
-			return true;
-		if (thato != null)
-		{
-			if (thato.getClass().equals(this.getClass()))
-			{
-				Auction that = (Auction) thato;
-				if (creator == that.creator || creator.equals(that.creator))
-				{
-					if (uuid == that.uuid || uuid.equals(that.uuid))
-					{
-						if (auctionedItem == that.auctionedItem || auctionedItem.equals(that.auctionedItem))
-						{
-							return price == that.price && isAsk == that.isAsk;
-						}
-					}
-				}
-			}
-		}
-		return false;
-	}
+	
 	
 	public ItemStack makeMenuItemStack()
 	{
 		ItemStack is = new ItemStack(this.auctionedItem.getType(), this.auctionedItem.getAmount());
 		ItemMeta im = is.getItemMeta();
-		im.setLore(Arrays.asList(AUCTION_ITEM_AUCTION_LORE.replace(AUCTION_ITEM_AUCTION_LORE_PLACEHOLDER, this.getUuid().toString()), "Price: " + this.getPrice()));
-		is.setItemMeta(im);
-		return is;
+		if (im != null)
+		{
+			im.setLore(Arrays.asList("Creator: " + Bukkit.getOfflinePlayer(this.creator.getUUID()).getName(), AUCTION_ITEM_AUCTION_LORE.replace(AUCTION_ITEM_AUCTION_LORE_PLACEHOLDER, id+""), "Price: " + this.getPrice()));
+			is.setItemMeta(im);
+			return is;
+		}
+		else return null;
 	}
 	
 	public String toIngameString(boolean includeCreator)
 	{
-		return (includeCreator ? getCreatorAsOfflinePlayer().getName() + ": " : "") + uuid + " " + (isAsk ? "(Ask)" : "(Sell)") +"\n" + auctionedItem.getType() + " x" + auctionedItem.getAmount() + " for " + price;
+		return (includeCreator ? getCreatorAsOfflinePlayer().getName() + ": " : "") + id + " " + (isAsk ? "(Ask)" : "(Sell)") +"\n" + auctionedItem.getType() + " x" + auctionedItem.getAmount() + " for " + price;
 	}
 
 	@Override
