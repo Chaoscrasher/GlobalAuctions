@@ -1,5 +1,6 @@
 package com.jb1services.mc.rise.globalauctions.structure;
 
+import static com.jb1services.mc.rise.globalauctions.main.GlobalAuctionsPlugin.*;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -13,6 +14,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
@@ -23,7 +25,7 @@ import com.jb1services.mc.rise.globalauctions.main.GlobalAuctionsPlugin;
 import net.md_5.bungee.api.ChatColor;
 import net.milkbowl.vault.economy.Economy;
 
-public class Auction implements ConfigurationSerializable
+public class Auction implements ConfigurationSerializable, InventoryClickable<GlobalAuctionsPlugin>
 {
 	private UUIDS creator;
 	private UUIDS uuid;
@@ -100,7 +102,7 @@ public class Auction implements ConfigurationSerializable
 	public String makeInventoryTitle(GlobalAuctionsPlugin plugin)
 	{
 		String pname = Bukkit.getOfflinePlayer(creator.getUUID()).getName();
-		return plugin.getInventoryTitle().replace("{TYPE}", isAsk ? ChatColor.DARK_RED+"Auction" : ChatColor.DARK_GREEN+"Ask").replace("{USER_NAME}", pname);
+		return plugin.getInventoryTitle().replace("{TYPE}", isAsk ? ChatColor.DARK_GREEN+"Ask" : ChatColor.DARK_RED+"Auction").replace("{USER_NAME}", pname);
 	}
 	
 	public void showToPlayer(GlobalAuctionsPlugin plugin, Player player)
@@ -295,8 +297,29 @@ public class Auction implements ConfigurationSerializable
 		return false;
 	}
 	
+	public ItemStack makeMenuItemStack()
+	{
+		ItemStack is = new ItemStack(this.auctionedItem.getType(), this.auctionedItem.getAmount());
+		ItemMeta im = is.getItemMeta();
+		im.setLore(Arrays.asList(AUCTION_ITEM_AUCTION_LORE.replace(AUCTION_ITEM_AUCTION_LORE_PLACEHOLDER, this.getUuid().toString()), "Price: " + this.getPrice()));
+		is.setItemMeta(im);
+		return is;
+	}
+	
 	public String toIngameString(boolean includeCreator)
 	{
 		return (includeCreator ? getCreatorAsOfflinePlayer().getName() + ": " : "") + uuid + " " + (isAsk ? "(Ask)" : "(Sell)") +"\n" + auctionedItem.getType() + " x" + auctionedItem.getAmount() + " for " + price;
+	}
+
+	@Override
+	public ItemStack stack() 
+	{
+		return makeMenuItemStack();
+	}
+
+	@Override
+	public Optional<Inventory> onClick(GlobalAuctionsPlugin plugin, InventoryClickEvent e) 
+	{
+		return Optional.of(toInventory(plugin));
 	}
 }

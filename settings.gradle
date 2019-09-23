@@ -1,2 +1,2 @@
-include ':GlobalAuctions', ':jbutil'
-include ':GlobalAuctions', ':chaosmcutil'
+rootProject.name = 'globalauctions'
+include ':globalauctions', ':chaosmcutil'

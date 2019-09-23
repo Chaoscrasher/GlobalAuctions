@@ -2,6 +2,7 @@ package com.jb1services.mc.rise.globalauctions.commands;
 
 import com.chaoscrasher.commands.ChaosCommandExecutor;
 import com.chaoscrasher.commands.arglen.ArgLenFour;
+import com.chaoscrasher.commands.arglen.ArgLenGeneric;
 import com.chaoscrasher.commands.arglen.ArgLenOne;
 import com.chaoscrasher.commands.arglen.ArgLenThree;
 import com.chaoscrasher.commands.arglen.ArgLenTwo;
@@ -24,8 +25,11 @@ import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 
@@ -36,6 +40,11 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 	public GlobalAuctionsCommand(GlobalAuctionsPlugin plugin)
 	{
 		this.plugin = plugin;
+		ArgLenOne<Boolean> menuCommand = new ArgLenOne<>(Boolean.class, true, false,
+				a0 -> a0.equalsIgnoreCase("menu"))
+				.defineEffectA(this::onGlobalAuctionsMenu)
+				.applyTo(this);
+		
 		ArgLenTwo<Boolean, Boolean> cmd1 = new ArgLenTwo<>(Boolean.class, Boolean.class, true, false,
 				a0 -> a0.equalsIgnoreCase("show"),
 				a1 -> a1.equalsIgnoreCase("my"))
@@ -109,17 +118,83 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 				.defineEffectAB(this::onRouletteShow)
 				.applyTo(this);
 		
+		ArgLenTwo<Boolean, Boolean> rouletteShowListCommand = new ArgLenThree<>(Boolean.class, Boolean.class, Boolean.class, false, true,
+				a0 -> a0.equalsIgnoreCase("roulette"),
+				a1 -> a1.equalsIgnoreCase("show"),
+				a2 -> a2.equalsIgnoreCase("list"))
+				.defineEffectABC(this::onRouletteShowList)
+				.applyTo(this);
+		
 		ArgLenTwo<Boolean, Boolean> rouletteSwitchCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, true, true,
 				a0 -> a0.equalsIgnoreCase("roulette"),
 				a1 -> a1.equalsIgnoreCase("switch"))
 				.defineEffectAB(this::onRouletteSwitch)
 				.applyTo(this);
 		
-		ArgLenTwo<Boolean, Boolean> listAuctionsCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, true, true,
+		ArgLenTwo<Boolean, Boolean> rouletteReloadCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, true, true,
+				a0 -> a0.equalsIgnoreCase("roulette"),
+				a1 -> a1.equalsIgnoreCase("reload"))
+				.defineEffectAB(this::onRouletteShow)
+				.applyTo(this);
+		
+		ArgLenTwo<Boolean, Boolean> rouletteClearCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, false, true,
+				a0 -> a0.equalsIgnoreCase("roulette"),
+				a1 -> a1.equalsIgnoreCase("clear"))
+				.defineEffectAB(this::onRouletteClear)
+				.applyTo(this);
+		
+		ArgLenTwo<Boolean, Boolean> rouletteSaveCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, false, true,
+				a0 -> a0.equalsIgnoreCase("roulette"),
+				a1 -> a1.equalsIgnoreCase("save"))
+				.defineEffectAB(this::onRouletteSave)
+				.applyTo(this);
+		
+		ArgLenTwo<Boolean, Boolean> rouletteLoadCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, false, true,
+				a0 -> a0.equalsIgnoreCase("roulette"),
+				a1 -> a1.equalsIgnoreCase("load"))
+				.defineEffectAB(this::onRouletteLoad)
+				.applyTo(this);
+		
+		ArgLenTwo<Boolean, Boolean> auctionsSaveCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, false, true,
+				a0 -> a0.equalsIgnoreCase("auctions"),
+				a1 -> a1.equalsIgnoreCase("save"))
+				.defineEffectAB(this::onAuctionsSave)
+				.applyTo(this);
+		
+		ArgLenTwo<Boolean, Boolean> auctionsLoadCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, false, true,
+				a0 -> a0.equalsIgnoreCase("auctions"),
+				a1 -> a1.equalsIgnoreCase("load"))
+				.defineEffectAB(this::onAuctionsLoad)
+				.applyTo(this);
+		
+		ArgLenTwo<Boolean, Boolean> auctionsClearCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, false, true,
+				a0 -> a0.equalsIgnoreCase("auctions"),
+				a1 -> a1.equalsIgnoreCase("clear"))
+				.defineEffectAB(this::onRouletteClear)
+				.applyTo(this);
+		
+		ArgLenThree<Boolean, Boolean, Integer> rouletteTestCommand = new ArgLenThree<>(Boolean.class, Boolean.class, Integer.class, false, true,
+				a0 -> a0.equalsIgnoreCase("roulette"),
+				a1 -> a1.equalsIgnoreCase("test"))
+				.defineEffectABC(this::onRouletteTest)
+				.applyTo(this);
+		
+		ArgLenThree<Boolean, Boolean, Integer> auctionsTestCommand = new ArgLenThree<>(Boolean.class, Boolean.class, Integer.class, false, true,
+				a0 -> a0.equalsIgnoreCase("auctions"),
+				a1 -> a1.equalsIgnoreCase("test"))
+				.defineEffectABC(this::onAucsTest)
+				.applyTo(this);
+		
+		ArgLenTwo<Boolean, Boolean> listAuctionsCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, false, true,
 				a0 -> a0.equalsIgnoreCase("list"),
 				a1 -> a1.contains("auc"))
 				.defineEffectAB(this::onListAuctions)
 				.applyTo(this);
+	}
+	
+	public void onGlobalAuctionsMenu(ArgLenOne<Boolean> alen)
+	{
+		player.openInventory(plugin.makeMainMenu());
 	}
 	
 	public void onNewAuction(ArgLenTwo<Boolean, Double> alen)
@@ -260,28 +335,27 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 		}
 	}
 	
-	public void onRouletteAdd(ArgLenTwo<Boolean, Boolean> alen)
+	private void addToRoulette(int weight)
 	{
-		if (player.getInventory().getItemInMainHand() != null)
+		if (player.getInventory().getItemInMainHand() != null && !player.getInventory().getItemInMainHand().getType().equals(Material.AIR))
 		{
 			plugin.getItemRoulette().add(player.getInventory().getItemInMainHand(), 0);
-			sendGreen("Item added with weight " + 0 + "!");
+			sendGreen("Item added with weight " + weight + "!");
 		}
 		else
 			sendRed("You need an item in hand!");
+	}
+	
+	public void onRouletteAdd(ArgLenTwo<Boolean, Boolean> alen)
+	{
+		addToRoulette(0);
 	}
 	
 	public void onRouletteAddWithWeight(ArgLenThree<Boolean, Boolean, Integer> alen)
 	{
 		if (alen.getDataCNonOptional() >= 0)
 		{
-			if (player.getInventory().getItemInMainHand() != null)
-			{
-				plugin.getItemRoulette().add(player.getInventory().getItemInMainHand(), alen.getDataCNonOptional());
-				sendGreen("Item added with weight " + alen.getDataCNonOptional() + "!");
-			}
-			else
-				sendRed("You need an item in hand!");
+			addToRoulette(alen.getDataCNonOptional());
 		}
 		else
 			sendRed("Please use a weight >= 0!");
@@ -305,19 +379,6 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 			sendRed("Please use an index >= 0!");
 	}
 	
-	public void onRouletteShow(ArgLenTwo<Boolean, Boolean> alen)
-	{
-		Map<ItemStack, Integer> ir = plugin.getItemRoulette().getItemRoulette();
-		if (!ir.isEmpty())
-		{
-			for (ItemStack key : ir.keySet())
-			{
-				sendGold(key + "\nweight: " + ir.get(key));
-			}
-		}
-		else
-			player.sendMessage("You don't have any items set-up!");
-	}
 	
 	public void onRandomAuctionWithPrice(ArgLenThree<Boolean, Boolean, Double> alen)
 	{
@@ -343,6 +404,111 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 	{
 		plugin.getItemRoulette().switchMode();
 		sendGreen("ItemStack is now set up so that " + ChatColor.WHITE + (plugin.getItemRoulette().isRandom() ? "all items have the same probability" : "all items have their own probability") + ChatColor.GREEN + "!");
+	}
+	
+	public void onRouletteShowList(ArgLenGeneric alg)
+	{
+		Map<ItemStack, Integer> ir = plugin.getItemRoulette().getItemRoulette();
+		if (!ir.isEmpty())
+		{
+			for (ItemStack key : ir.keySet())
+			{
+				sendGold(key + "\nweight: " + ir.get(key));
+			}
+		}
+		else
+			player.sendMessage("You don't have any items set-up!");
+	}
+	
+	public void onRouletteShow(ArgLenTwo<Boolean, Boolean> alg)
+	{
+		Optional<Inventory> invo = plugin.getItemRoulette().toInventory(0);
+		if (invo.isPresent())
+			player.openInventory(invo.get());
+		else
+			sendRed("You don't have any items set-up!");
+	}
+	
+	public void onRouletteSave(ArgLenTwo<Boolean, Boolean> alg)
+	{
+		plugin.saveRoulette();
+		sender.sendMessage("Saving roulette...");
+	}
+	
+	public void onRouletteLoad(ArgLenTwo<Boolean, Boolean> alg)
+	{
+		plugin.loadRoulette();
+		sender.sendMessage("Loading roulette...");
+	}
+	
+	public void onRouletteClear(ArgLenTwo<Boolean, Boolean> alg)
+	{
+		plugin.getItemRoulette().clear();
+		sender.sendMessage("Roulette cleared!");
+	}
+	
+	public void onAuctionsSave(ArgLenTwo<Boolean, Boolean> alg)
+	{
+		plugin.saveAuctions();
+		sender.sendMessage("Savings Auctions...");
+	}
+	
+	public void onAuctionsLoad(ArgLenTwo<Boolean, Boolean> alg)
+	{
+		plugin.loadRoulette();
+		sender.sendMessage("Loading Auctions...");
+	}
+	
+	public void onAuctionsClear(ArgLenTwo<Boolean, Boolean> alg)
+	{
+		plugin.getAuctionsDatabase().clear();
+		sender.sendMessage("Auctions cleared!");
+	}
+	
+	private ItemStack createRandomItem()
+	{
+		Random rnd = new Random();
+		ItemStack is = new ItemStack(Material.values()[rnd.nextInt(Material.values().length)], rnd.nextInt(63)+1);
+		while (is.getItemMeta() == null)
+			is = new ItemStack(Material.values()[rnd.nextInt(Material.values().length)], rnd.nextInt(63)+1);
+		
+		return is;
+	}
+	
+	public void onRouletteTest(ArgLenThree<Boolean, Boolean, Integer> alg)
+	{
+		sender.sendMessage("Adding " + alg.getDataCNonOptional() + " test values to item roulette!");
+		Random rnd = new Random();
+		for (int i = 1; i <= alg.getDataCNonOptional(); i++)
+		{
+			plugin.getItemRoulette().add(createRandomItem(), rnd.nextInt(1000));
+		}
+	}
+	
+	public void onAucsTest(ArgLenThree<Boolean, Boolean, Integer> alg)
+	{
+		sender.sendMessage("Adding " + alg.getDataCNonOptional() + " test auctions on your name to database!");
+		Random rnd = new Random();
+		for (int i = 1; i <= alg.getDataCNonOptional(); i++)
+		{
+			plugin.getAuctionsDatabase().addAuction(new Auction(player.getUniqueId(), createRandomItem(), 99999, rnd.nextBoolean()));
+		}
+	}
+	
+	public void onRouletteReload(ArgLenTwo<Boolean, Boolean> alg)
+	{
+		plugin.reloadConfig();
+		try
+		{
+			plugin.loadItemRoulette();
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		} catch (InvalidConfigurationException e) 
+		{
+			e.printStackTrace();
+		}
 	}
 	
 	public void onListAuctions(ArgLenTwo<Boolean, Boolean> alen)

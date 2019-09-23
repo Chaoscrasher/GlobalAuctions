@@ -1,6 +1,4 @@
-[submodule "jbutil"]
-	path = jbutil
-	url = git@bitbucket.org:Jonas_Bartkowski/jbutil.git
+
 [submodule "chaosmcutil"]
 	path = chaosmcutil
 	url = git@bitbucket.org:Jonas_Bartkowski/chaosmcutil.git
