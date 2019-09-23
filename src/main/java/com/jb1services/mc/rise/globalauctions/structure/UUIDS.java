@@ -68,8 +68,12 @@ public class UUIDS implements ConfigurationSerializable
 			if (that.getClass().equals(this.getClass()))
 			{
 				UUIDS to = (UUIDS) that;
-				if (to.uuid == this.uuid || to.uuid.equals(this.uuid))
-					return true;
+				return (to.uuid == this.uuid || to.uuid.equals(this.uuid));
+			}
+			else if (that.getClass().equals(UUID.class))
+			{
+				UUID tid = (UUID) that;
+				return tid == this.uuid || tid.equals(this.uuid);
 			}
 		}
 		return false;
