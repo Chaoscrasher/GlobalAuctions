@@ -51,9 +51,9 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 				.defineEffectAB(this::onShowMyAuctions)
 				.applyTo(this);
 		
-		ArgLenTwo<Boolean, String> cmd2 = new ArgLenTwo<>(Boolean.class, String.class, true, false,
+		ArgLenTwo<Boolean, Integer> cmd2 = new ArgLenTwo<>(Boolean.class, Integer.class, true, false,
 				a0 -> a0.equalsIgnoreCase("show"))
-				.defineEffectAB(this::onShowAuctions)
+				.defineEffectAB(this::onShowAuctionById)
 				.applyTo(this);
 		
 		ArgLenTwo<Boolean, Double> cmd3 = new ArgLenTwo<>(Boolean.class, Double.class, true, false,
@@ -79,7 +79,7 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 				.defineEffectAB(this::onRandomAuction)
 				.applyTo(this);
 		
-		ArgLenTwo<Boolean, String> cancelCommand = new ArgLenTwo<>(Boolean.class, String.class, true, false,
+		ArgLenTwo<Boolean, Integer> cancelCommand = new ArgLenTwo<>(Boolean.class, Integer.class, true, false,
 				a0 -> a0.equalsIgnoreCase("cancel"))
 				.defineEffectAB(this::onCancelAuction)
 				.applyTo(this);
@@ -161,7 +161,7 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 				.defineEffectAB(this::onAuctionsSave)
 				.applyTo(this);
 		
-		ArgLenTwo<Boolean, Boolean> auctionsLoadCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, false, true,
+		ArgLenTwo<Boolean, Boolean> auctionsLoadommand = new ArgLenTwo<>(Boolean.class, Boolean.class, false, true,
 				a0 -> a0.equalsIgnoreCase("auctions"),
 				a1 -> a1.equalsIgnoreCase("load"))
 				.defineEffectAB(this::onAuctionsLoad)
@@ -170,7 +170,7 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 		ArgLenTwo<Boolean, Boolean> auctionsClearCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, false, true,
 				a0 -> a0.equalsIgnoreCase("auctions"),
 				a1 -> a1.equalsIgnoreCase("clear"))
-				.defineEffectAB(this::onRouletteClear)
+				.defineEffectAB(this::onAuctionsClear)
 				.applyTo(this);
 		
 		ArgLenThree<Boolean, Boolean, Integer> rouletteTestCommand = new ArgLenThree<>(Boolean.class, Boolean.class, Integer.class, false, true,
@@ -202,7 +202,7 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 		double price = alen.getDataBNonOptional();
 		if (plugin.negativePriceAllowed() || price >= 0)
 		{
-			Auction auction = new Auction(player.getUniqueId(), player.getItemInHand(), price, false);
+			Auction auction = new Auction(plugin.getAuctionsDatabase(), player.getUniqueId(), player.getInventory().getItemInMainHand(), price, false);
 			finishAuction(auction);
 		}
 		else
@@ -214,7 +214,7 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 		double price = alen.getDataCNonOptional();
 		if (plugin.negativePriceAllowed() || price >= 0)
 		{
-			Auction auction = new Auction(player.getUniqueId(), player.getItemInHand(), price, true);
+			Auction auction = new Auction(plugin.getAuctionsDatabase(), player.getUniqueId(), player.getInventory().getItemInMainHand(), price, true);
 			finishAuction(auction);
 		}
 		else
@@ -223,54 +223,48 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 	
 	public void finishAuction(Auction auction)
 	{
-		plugin.getAuctionsDatabase().addAuction(auction);
 		player.getInventory().setItemInMainHand(null);
-		sendGreen("Auction " + auction.getUuid() + " created!");
+		sendGreen("Auction " + auction.getId() + " created!");
 	}
 	
-	public void onShowAuctions(ArgLenTwo<Boolean, String> alen)
+	public void onShowAuctionsOfPlayer(ArgLenTwo<Boolean, String> alen)
 	{
 		Optional<OfflinePlayer> plo = ChaosBukkit.getOfflinePlayerByName(alen.getDataBNonOptional());
 		if (plo.isPresent())
 		{
 			OfflinePlayer op = plo.get();
-			Map<UUIDS, Auction> auctions = plugin.getAuctionsDatabase().getAuctions(op.getUniqueId());
+			Map<Integer, Auction> auctions = plugin.getAuctionsDatabase().getAuctions(op.getUniqueId());
 			if (!auctions.isEmpty())
 			{
 				String str = "";
 				for (Auction auc : auctions.values())
 				{
-					str += auc.getUuid() + ":\n" + auc.getAuctionedItem().getType() + " x" + auc.getAuctionedItem().getAmount() + " for " + auc.getPrice() + "\n\n";
+					str += auc.getId() + ":\n" + auc.getAuctionedItem().getType() + " x" + auc.getAuctionedItem().getAmount() + " for " + auc.getPrice() + "\n\n";
 				}
 				sendGreen("These are '"+op.getName()+"'s auctions!\n" + str);
 			}
 			else
 				sendRed("Sorry, but '"+op.getName()+"' doesn't have any auctions!");
 		}
-		else if (alen.getDataBNonOptional().length() >= 5)
-		{
-			Map<UUIDS, Auction> aucs = plugin.getAuctionsDatabase().getAuctions(alen.getDataBNonOptional());
-			if (!aucs.isEmpty())
-			{
-				if (aucs.size() == 1)
-				{
-					Auction auc = aucs.values().iterator().next();
-					sendGreen("Showing you auction " + auc.getUuid());
-					auc.showToPlayer(plugin, player);
-				}
-				else
-					sendGreen("These are the auctions fitting your search!:\n" + createAuctionsString(aucs));
-			}
-			else
-				sendRed("Sorry, but there is no auction that contains '" + alen.getDataBNonOptional() + "'.");
-		}
 		else
 			sendRed("Sorry, but please supply at least 5 characters!");
+	}
+	
+	public void onShowAuctionById(ArgLenTwo<Boolean, Integer> alen)
+	{
+		Optional<Auction> auctiono = plugin.getAuctionsDatabase().getAuctionById(alen.getDataBNonOptional());
+		if (auctiono.isPresent())
+		{
+			Auction auc = auctiono.get();
+			sender.sendMessage(auc.getId() + ":\n" + auc.getAuctionedItem().getType() + " x" + auc.getAuctionedItem().getAmount() + " for " + auc.getPrice() + "\n");
+		}
+		else
+			sendRed("Sorry, but '"+alen.getDataBNonOptional()+"' is not a valid auction id!");
 	}
 		
 	public void onShowMyAuctions(ArgLenTwo<Boolean, Boolean> alen)
 	{
-		Map<UUIDS, Auction> auctions = plugin.getAuctionsDatabase().getAuctions(player.getUniqueId());
+		Map<Integer, Auction> auctions = plugin.getAuctionsDatabase().getAuctions(player.getUniqueId());
 		if (!auctions.isEmpty())
 		{
 			sendGreen("These are your auctions!\n" + createAuctionsString(auctions));
@@ -279,15 +273,16 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 			sendRed("Sorry, but you don't have any auctions!");
 	}
 	
-	public void onCancelAuction(ArgLenTwo<Boolean, String> alen)
+	public void onCancelAuction(ArgLenTwo<Boolean, Integer> alen)
 	{
-		List<Auction> aucs = plugin.getAuctionsDatabase().getAuctions(alen.getDataBNonOptional(), player.getUniqueId());
-		if (!aucs.isEmpty())
+		Optional<Auction> auco = plugin.getAuctionsDatabase().getAuctionById(alen.getDataBNonOptional());
+		if (auco.isPresent())
 		{
-			if (aucs.size() == 1)
+			Auction auc = auco.get();
+			if (auc.getCreator().equals(player.getUniqueId()))
 			{
-				Auction auc = aucs.get(0);
 				plugin.getAuctionsDatabase().removeAuction(auc);
+				sendGreen("Auction '" + CWT + auc.getId() + CGN + "' cancelled!");
 			}
 			else
 				sendRed("Sorry, but there is more than one auction with an ID that starts with '" + alen.getDataBNonOptional() + "'!");
@@ -384,9 +379,9 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 	{
 		if (alen.getDataCNonOptional() >= 0)
 		{
-			Auction auc = new Auction(player.getUniqueId(), plugin.getItemRoulette().decide().get(), alen.getDataCNonOptional());
+			Auction auc = new Auction(plugin.getAuctionsDatabase(), player.getUniqueId(), plugin.getItemRoulette().decide().get(), alen.getDataCNonOptional());
 			plugin.getAuctionsDatabase().addAuction(auc);
-			sendGreen("Auction " + ChatColor.WHITE + auc.getUuid() + " is live!");
+			sendGreen("Auction " + ChatColor.WHITE + auc.getId() + " is live!");
 		}
 		else 
 			sendRed("Sorry, only positive prices are allowed!");
@@ -396,8 +391,8 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 	{
 		Random rnd = new Random();
 		int cost = rnd.nextInt(plugin.getRandomPriceBound());
-		Auction auc = new Auction(player.getUniqueId(), plugin.getItemRoulette().decide().get(), cost);
-		sendGreen("Random Auction " + ChatColor.WHITE + auc.getUuid() + ChatColor.GREEN + " is live!");
+		Auction auc = new Auction(plugin.getAuctionsDatabase(), player.getUniqueId(), plugin.getItemRoulette().decide().get(), cost);
+		sendGreen("Random Auction " + ChatColor.WHITE + auc.getId() + ChatColor.GREEN + " is live!");
 	}
 	
 	public void onRouletteSwitch(ArgLenTwo<Boolean, Boolean> alen)
@@ -450,13 +445,13 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 	public void onAuctionsSave(ArgLenTwo<Boolean, Boolean> alg)
 	{
 		plugin.saveAuctions();
-		sender.sendMessage("Savings Auctions...");
+		sender.sendMessage("Saved "+CGN+plugin.getAuctionsDatabase().size()+CWT+" Auctions!");
 	}
 	
 	public void onAuctionsLoad(ArgLenTwo<Boolean, Boolean> alg)
 	{
-		plugin.loadRoulette();
-		sender.sendMessage("Loading Auctions...");
+		plugin.loadAuctions();
+		sender.sendMessage("Loaded " + CGN +  plugin.getAuctionsDatabase().size() + CWT + " auctions!");
 	}
 	
 	public void onAuctionsClear(ArgLenTwo<Boolean, Boolean> alg)
@@ -491,7 +486,9 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 		Random rnd = new Random();
 		for (int i = 1; i <= alg.getDataCNonOptional(); i++)
 		{
-			plugin.getAuctionsDatabase().addAuction(new Auction(player.getUniqueId(), createRandomItem(), 99999, rnd.nextBoolean()));
+			ItemStack is = createRandomItem();
+			Auction auc = new Auction(plugin.getAuctionsDatabase(), player.getUniqueId(), is, 99999, rnd.nextBoolean());
+			plugin.getAuctionsDatabase().addAuction(auc);
 		}
 	}
 	
@@ -522,7 +519,7 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 		return "gas";
 	}
 	
-	private String createAuctionsString(Map<UUIDS, Auction> auctions)
+	private String createAuctionsString(Map<Integer, Auction> auctions)
 	{
 		return createAuctionsString(auctions.values());
 	}
@@ -532,7 +529,7 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 		String str = "";
 		for (Auction auc : auctions)
 		{
-			str += auc.getUuid() + ":\n" + auc.getAuctionedItem().getType() + " x" + auc.getAuctionedItem().getAmount() + " for " + auc.getPrice() + "\n\n";
+			str += auc.getId() + ":\n" + auc.getAuctionedItem().getType() + " x" + auc.getAuctionedItem().getAmount() + " for " + auc.getPrice() + "\n\n";
 		}
 		return str;
 	}

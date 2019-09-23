@@ -24,7 +24,7 @@ import com.jb1services.mc.rise.globalauctions.main.GlobalAuctionsPlugin;
 
 public class AuctionsDatabase implements ConfigurationSerializable, Debuggable
 {	
-	private Map<UUIDS, Map<UUIDS, Auction>> auctions = new HashMap<>();
+	private Map<UUIDS, Map<Integer, Auction>> auctions = new HashMap<>();
 	
 	public AuctionsDatabase()
 	{
@@ -33,24 +33,12 @@ public class AuctionsDatabase implements ConfigurationSerializable, Debuggable
 	
 	public AuctionsDatabase(Map<String, Object> data)
 	{
-		for (String key : data.keySet())
-		{
-			Object val = data.get(key);
-			if (val instanceof Auction)
-			{
-				Auction auction = (Auction) val;
-				String[] splits = key.split("\\.");
-				UUIDS uuids = UUIDS.fromString(splits[0]);
-				UUIDS auuids = UUIDS.fromString(splits[1]);
-				auctions.putIfAbsent(uuids, new HashMap<>());
-				auctions.get(uuids).put(auuids, auction);
-			}
-		}
+		this.auctions = (Map<UUIDS, Map<Integer, Auction>>) data.get("auctions");
 	}
 	
 	public void addAuction(Auction auction)
 	{
-		Map<UUIDS, Auction> uauctions; 
+		Map<Integer, Auction> uauctions; 
 		if (auctions.containsKey(auction.getCreator()))
 		{
 			uauctions = auctions.get(auction.getCreator());
@@ -58,63 +46,22 @@ public class AuctionsDatabase implements ConfigurationSerializable, Debuggable
 		else
 			uauctions = new HashMap<>();
 		
-		uauctions.put(auction.getUuid(), auction);
+		uauctions.put(auction.getId(), auction);
 		auctions.put(auction.getCreator(), uauctions);
-	}
-	
-	/**
-	 * Returns the one auction that contains the given uUIDPart.
-	 * If there is more than one or no auction that contains
-	 * the given uUIDPart, an empty Optional is returned.
-	 */
-	public Map<UUIDS, Auction> getAuctions(String uUIDPart)
-	{
-		Map<UUIDS, Auction> fittingAuctions = new HashMap<>();
-		for (UUIDS user : auctions.keySet())
-		{
-			List<Auction> uauctions = getAuctions(uUIDPart, user);
-			uauctions.forEach(auc -> fittingAuctions.put(user, auc));
-		}
-		return fittingAuctions;
-	}
-	
-	public List<Auction> getAuctions(String uUIDPart, UUID creator)
-	{
-		return getAuctions(uUIDPart, UUIDS.of(creator));
-	}
-	
-	public List<Auction> getAuctions(String uUIDPart, UUIDS creator)
-	{
-		List<Auction> fittingAuctions = new ArrayList<>();
-		Map<UUIDS, Auction> usersAuctions = auctions.get(creator);
-		for (UUIDS key : usersAuctions.keySet())
-		{
-			Auction auc = usersAuctions.get(key);
-			if (auc.getUuid().toString().startsWith(uUIDPart))
-			{
-				if (!key.equals(auc.getUuid()))
-					System.err.println("WARNING!! UUIDS KEY DIDN'T MATCH AUCTION UUIDS!");
-				else
-				{
-					fittingAuctions.add(auc);
-				}
-			}
-		}
-		return fittingAuctions;
 	}
 	
 	public void removeAuction(Auction auction)
 	{
-		auctions.get(auction.getCreator()).remove(auction.getUuid());
+		auctions.get(auction.getCreator()).remove(auction.getId());
 	}
 	
-	public Map<UUIDS, Auction> getAuctions(UUID user)
+	public Map<Integer, Auction> getAuctions(UUID user)
 	{
-		Map<UUIDS, Auction> aucs = getAuctions(UUIDS.of(user));
+		Map<Integer, Auction> aucs = getAuctions(UUIDS.of(user));
 		return aucs;
 	}
 	
-	public Map<UUIDS, Auction> getAuctions(UUIDS user)
+	public Map<Integer, Auction> getAuctions(UUIDS user)
 	{
 		if (auctions.containsKey(user))
 			return auctions.get(user);
@@ -131,7 +78,7 @@ public class AuctionsDatabase implements ConfigurationSerializable, Debuggable
 	{
 		if (!auctions.isEmpty())
 		{
-			plugin.getConfig().set("auctions", auctions);
+			plugin.getConfig().set("auctions", this);
 			plugin.saveConfig();
 		}
 	}
@@ -140,21 +87,22 @@ public class AuctionsDatabase implements ConfigurationSerializable, Debuggable
 	public Map<String, Object> serialize()
 	{
 		Map<String, Object> aucs = new HashMap<>();
-		for (UUIDS uuids : auctions.keySet())
-		{
-			aucs.put(uuids.toString(), auctions.get(uuids));
-		}
+		aucs.put("auctions", auctions);
 		return aucs;
 	}
 	
-	public Optional<Auction> getAuction(UUIDS plyr, UUIDS auction)
+	public Optional<Auction> getAuction(UUIDS plyr, int auction, double price)
 	{
 		if (auctions.containsKey(plyr) && auctions.get(plyr).containsKey(auction))
-			return Optional.of(auctions.get(plyr).get(auction));
+		{
+			Auction auc = auctions.get(plyr).get(auction);
+			if (auc.getPrice() == price)
+				return Optional.of(auc);
+		}
 		return Optional.empty();
 	}
 
-	public Map<UUIDS, Map<UUIDS, Auction>> getAuctions()
+	public Map<UUIDS, Map<Integer, Auction>> getAuctions()
 	{
 		return Collections.unmodifiableMap(auctions);
 	}
@@ -162,7 +110,7 @@ public class AuctionsDatabase implements ConfigurationSerializable, Debuggable
 	public List<Auction> getSells()
 	{
 		List<Auction> sells = new ArrayList<>();
-		for (Map<UUIDS, Auction> submap : auctions.values())
+		for (Map<Integer, Auction> submap : auctions.values())
 		{
 			for (Auction auc : submap.values())
 			{
@@ -176,7 +124,7 @@ public class AuctionsDatabase implements ConfigurationSerializable, Debuggable
 	public List<Auction> getAsks()
 	{
 		List<Auction> asks = new ArrayList<>();
-		for (Map<UUIDS, Auction> submap : auctions.values())
+		for (Map<Integer, Auction> submap : auctions.values())
 		{
 			for (Auction auc : submap.values())
 			{
@@ -257,12 +205,12 @@ public class AuctionsDatabase implements ConfigurationSerializable, Debuggable
 		return Optional.empty();
 	}
 	
-	public Optional<Auction> getAuction(UUIDS uuid)
+	public Optional<Auction> getAuctionById(int id)
 	{
-		for (Map<UUIDS, Auction> map: auctions.values())
+		for (Map<Integer, Auction> map: auctions.values())
 		{
-			if (map.containsKey(uuid))
-				return Optional.of(map.get(uuid));
+			if (map.containsKey(id))
+				return Optional.of(map.get(id));
 		}
 		return Optional.empty();
 	}
@@ -277,8 +225,8 @@ public class AuctionsDatabase implements ConfigurationSerializable, Debuggable
 				String aucstr = lore.get(0);
 				if (aucstr.startsWith(GlobalAuctionsPlugin.AUCTION_PREFIX))
 				{
-					UUIDS uuid = UUIDS.fromString(aucstr.split(GlobalAuctionsPlugin.AUCTION_PREFIX)[1]);
-					Optional<Auction> auco = getAuction(uuid);
+					int id = Integer.valueOf(aucstr.split(GlobalAuctionsPlugin.AUCTION_PREFIX)[1]);
+					Optional<Auction> auco = getAuctionById(id);
 					return auco;
 				}
 			}
@@ -302,5 +250,30 @@ public class AuctionsDatabase implements ConfigurationSerializable, Debuggable
 	public void clear() 
 	{
 		this.auctions.clear();
+	}
+	
+	public int nextFreeId() 
+	{
+		List<Integer> usedIds = new ArrayList<>();
+		for (Map<Integer, Auction> auctionsm : auctions.values())
+		{
+			usedIds.addAll(auctionsm.keySet());
+		}
+		for (int i = 0; i < Integer.MAX_VALUE; i++)
+		{
+			if (!usedIds.contains(i))
+				return i;
+		}
+		throw new IllegalStateException("Using more IDs than possible Integer numbers!");
+	}
+	
+	public int size()
+	{
+		int size = 0;
+		for (Map<Integer, Auction> auctionsm : auctions.values())
+		{
+			size += auctionsm.size();
+		}
+		return size;
 	}
 }

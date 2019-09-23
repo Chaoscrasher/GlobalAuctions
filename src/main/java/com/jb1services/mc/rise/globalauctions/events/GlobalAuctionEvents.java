@@ -18,6 +18,7 @@ import com.chaoscrasher.events.ChaosEventListener;
 import com.chaoscrasher.events.InventoryEventListener;
 import com.chaoscrasher.global.CCStringUtils;
 import com.chaoscrasher.utils.Debuggable;
+import com.chaoscrasher.utils.StaticHelpers;
 import com.jb1services.mc.rise.globalauctions.main.GlobalAuctionsPlugin;
 import com.jb1services.mc.rise.globalauctions.structure.Auction;
 import com.jb1services.mc.rise.globalauctions.structure.AuctionsDatabase;
@@ -28,7 +29,7 @@ import net.md_5.bungee.api.ChatColor;
 import net.milkbowl.vault.economy.Economy;
 
 
-public class GlobalAuctionEvents extends InventoryEventListener implements Debuggable {
+public class GlobalAuctionEvents extends InventoryEventListener implements Debuggable, StaticHelpers {
 
 	private AsksMenu asksMenu;
 	private SellsMenu sellsMenu;
@@ -170,6 +171,7 @@ public class GlobalAuctionEvents extends InventoryEventListener implements Debug
 			if (clicked.getItemMeta().getDisplayName().equals(GlobalAuctionsPlugin.ASK_EXECUTE_NAME) ||
 					clicked.getItemMeta().getDisplayName().equals(GlobalAuctionsPlugin.SELL_EXECUTE_NAME))
 			{
+				Player p = (Player) e.getWhoClicked();
 				ItemStack itemFromInv = inv.getItem(GlobalAuctionsPlugin.DEFAULT_ITEM_SLOT);
 				List<String> lore = clicked.getItemMeta().getLore();
 				Optional<Auction> auco = Auction.fromLore(getPlugin().getAuctionsDatabase(), lore);
@@ -177,11 +179,14 @@ public class GlobalAuctionEvents extends InventoryEventListener implements Debug
 				{
 					Auction auc = auco.get();
 					ItemStack auci = auc.getAuctionedItem();
-					debug1("is from inv: " + itemFromInv + "\nis from auc: " + auc.getAuctionedItem() + "\neq: " + itemFromInv.equals(auc.getAuctionedItem()));
+					debug2("is from inv: " + auci + "\nis from auc: " + auc.getAuctionedItem() + "\neq: " + auci.equals(auc.getAuctionedItem()));
 					auc.finalizeAuction(e.getView(), getPlugin(), player);
 				}
 				else
-					throw new IllegalStateException("ItemSlot doesn't contain item!");
+				{
+					p.sendMessage(CRD + "Auction was either already bought-out, or Player changed their name!");
+					p.closeInventory();
+				}
 			}
 		}
 		e.setCancelled(true);

@@ -41,7 +41,7 @@ public class GlobalAuctionsPlugin extends JavaPlugin implements StaticHelpers {
 	public static final String ASK_EXECUTE_NAME = ChatColor.DARK_GREEN + "SELL";
 	public static final String SELL_EXECUTE_NAME = ChatColor.DARK_RED + "BUY";
 	
-	public static final String PLAYER_PREFIX = "Player: ";
+	public static final String PLAYER_PREFIX = "Creator: ";
 	public static final String AUCTION_PREFIX = "Auction: ";
 	public static final String PRICE_PREFIX = "Price: ";
 	
@@ -95,32 +95,29 @@ public class GlobalAuctionsPlugin extends JavaPlugin implements StaticHelpers {
 	
 	public void loadAuctions()
 	{
-		boolean foundA = getConfig().getConfigurationSection("auctions") != null;
-		System.err.println((foundA ? "Did " : "Did not ") + "find auctions in config.");
-		if (foundA)
+		reloadConfig();
+		try
 		{
-			try
-			{
-				loadAuctionsDatabase();
-				System.out.println("Auctions loaded successfully!");
-			} catch (FileNotFoundException e)
-			{
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e)
-			{
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (InvalidConfigurationException e)
-			{
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			loadAuctionsDatabase();
+			System.out.println("Auctions loaded successfully!");
+		} catch (FileNotFoundException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidConfigurationException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 	
 	public void loadRoulette()
 	{
+		reloadConfig();
 		boolean foundR = getConfig().get("roulette") != null;
 		System.err.println((foundR ? "Did " : "Did not ") + "find roulette in config.");
 		if (foundR)
@@ -154,7 +151,8 @@ public class GlobalAuctionsPlugin extends JavaPlugin implements StaticHelpers {
 	
 	public void saveAuctions()
 	{
-		try {
+		try 
+		{
 			auctionsDatabase.save(this);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -170,11 +168,17 @@ public class GlobalAuctionsPlugin extends JavaPlugin implements StaticHelpers {
 	public void loadAuctionsDatabase() throws FileNotFoundException, IOException, InvalidConfigurationException
 	{
 		this.reloadConfig();
-		Object object = getConfig().get("auctions");
-		System.out.println("auctions " + (getConfig().getConfigurationSection("auctions") != null ? "exist" : "don't exist") + "!");
-		this.auctionsDatabase = new AuctionsDatabase(getConfig()
-				.getConfigurationSection("auctions")
-				.getValues(true));
+		AuctionsDatabase object = getConfig().getObject("auctions", AuctionsDatabase.class);
+		System.out.println("Auctions " + (object != null ? "exist" : "don't exist") + "!");
+		if (object != null)
+		{
+			if (object instanceof AuctionsDatabase)
+			{
+				this.auctionsDatabase = (AuctionsDatabase) object;
+			}
+			else
+				System.err.println("WARNING: Config corrupted! Found auctions in config, but they aren't of type AuctionsDatabase!");
+		}
 	}
 	
 	public void loadItemRoulette() throws FileNotFoundException, IOException, InvalidConfigurationException
@@ -231,12 +235,12 @@ public class GlobalAuctionsPlugin extends JavaPlugin implements StaticHelpers {
 	
 	public String getAllAuctionsMessage()
 	{
-		Map<UUIDS, Map<UUIDS, Auction>> aucs = auctionsDatabase.getAuctions();  
+		Map<UUIDS, Map<Integer, Auction>> aucs = auctionsDatabase.getAuctions();  
 		String str = "";
 		for (UUIDS uuids : aucs.keySet())
 		{
 			str += Bukkit.getOfflinePlayer(uuids.getUUID()).getName() + "\n\n";
-			Map<UUIDS, Auction> smp = aucs.get(uuids);
+			Map<Integer, Auction> smp = aucs.get(uuids);
 			for (Auction auc : smp.values())
 			{
 				str += auc.toIngameString(false);
@@ -262,6 +266,4 @@ public class GlobalAuctionsPlugin extends JavaPlugin implements StaticHelpers {
 		
 		return inv;
 	}
-	
-	
 }
