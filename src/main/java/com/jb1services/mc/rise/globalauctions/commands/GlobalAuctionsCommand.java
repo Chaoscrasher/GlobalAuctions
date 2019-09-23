@@ -155,10 +155,34 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 				.defineEffectAB(this::onRouletteLoad)
 				.applyTo(this);
 		
+		ArgLenTwo<Boolean, Boolean> auctionsSaveCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, false, true,
+				a0 -> a0.equalsIgnoreCase("auctions"),
+				a1 -> a1.equalsIgnoreCase("save"))
+				.defineEffectAB(this::onAuctionsSave)
+				.applyTo(this);
+		
+		ArgLenTwo<Boolean, Boolean> auctionsLoadCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, false, true,
+				a0 -> a0.equalsIgnoreCase("auctions"),
+				a1 -> a1.equalsIgnoreCase("load"))
+				.defineEffectAB(this::onAuctionsLoad)
+				.applyTo(this);
+		
+		ArgLenTwo<Boolean, Boolean> auctionsClearCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, false, true,
+				a0 -> a0.equalsIgnoreCase("auctions"),
+				a1 -> a1.equalsIgnoreCase("clear"))
+				.defineEffectAB(this::onRouletteClear)
+				.applyTo(this);
+		
 		ArgLenThree<Boolean, Boolean, Integer> rouletteTestCommand = new ArgLenThree<>(Boolean.class, Boolean.class, Integer.class, false, true,
 				a0 -> a0.equalsIgnoreCase("roulette"),
 				a1 -> a1.equalsIgnoreCase("test"))
 				.defineEffectABC(this::onRouletteTest)
+				.applyTo(this);
+		
+		ArgLenThree<Boolean, Boolean, Integer> auctionsTestCommand = new ArgLenThree<>(Boolean.class, Boolean.class, Integer.class, false, true,
+				a0 -> a0.equalsIgnoreCase("auctions"),
+				a1 -> a1.equalsIgnoreCase("test"))
+				.defineEffectABC(this::onAucsTest)
 				.applyTo(this);
 		
 		ArgLenTwo<Boolean, Boolean> listAuctionsCommand = new ArgLenTwo<>(Boolean.class, Boolean.class, false, true,
@@ -408,11 +432,13 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 	public void onRouletteSave(ArgLenTwo<Boolean, Boolean> alg)
 	{
 		plugin.saveRoulette();
+		sender.sendMessage("Saving roulette...");
 	}
 	
 	public void onRouletteLoad(ArgLenTwo<Boolean, Boolean> alg)
 	{
 		plugin.loadRoulette();
+		sender.sendMessage("Loading roulette...");
 	}
 	
 	public void onRouletteClear(ArgLenTwo<Boolean, Boolean> alg)
@@ -421,16 +447,51 @@ public class GlobalAuctionsCommand extends ChaosCommandExecutor
 		sender.sendMessage("Roulette cleared!");
 	}
 	
+	public void onAuctionsSave(ArgLenTwo<Boolean, Boolean> alg)
+	{
+		plugin.saveAuctions();
+		sender.sendMessage("Savings Auctions...");
+	}
+	
+	public void onAuctionsLoad(ArgLenTwo<Boolean, Boolean> alg)
+	{
+		plugin.loadRoulette();
+		sender.sendMessage("Loading Auctions...");
+	}
+	
+	public void onAuctionsClear(ArgLenTwo<Boolean, Boolean> alg)
+	{
+		plugin.getAuctionsDatabase().clear();
+		sender.sendMessage("Auctions cleared!");
+	}
+	
+	private ItemStack createRandomItem()
+	{
+		Random rnd = new Random();
+		ItemStack is = new ItemStack(Material.values()[rnd.nextInt(Material.values().length)], rnd.nextInt(63)+1);
+		while (is.getItemMeta() == null)
+			is = new ItemStack(Material.values()[rnd.nextInt(Material.values().length)], rnd.nextInt(63)+1);
+		
+		return is;
+	}
+	
 	public void onRouletteTest(ArgLenThree<Boolean, Boolean, Integer> alg)
 	{
 		sender.sendMessage("Adding " + alg.getDataCNonOptional() + " test values to item roulette!");
 		Random rnd = new Random();
 		for (int i = 1; i <= alg.getDataCNonOptional(); i++)
 		{
-			Material mat = Material.values()[rnd.nextInt(Material.values().length)];
-			while (mat.equals(Material.AIR))
-				mat = Material.values()[rnd.nextInt(Material.values().length)];
-			plugin.getItemRoulette().add(new ItemStack(mat, rnd.nextInt(63)+1), rnd.nextInt(1000));
+			plugin.getItemRoulette().add(createRandomItem(), rnd.nextInt(1000));
+		}
+	}
+	
+	public void onAucsTest(ArgLenThree<Boolean, Boolean, Integer> alg)
+	{
+		sender.sendMessage("Adding " + alg.getDataCNonOptional() + " test auctions on your name to database!");
+		Random rnd = new Random();
+		for (int i = 1; i <= alg.getDataCNonOptional(); i++)
+		{
+			plugin.getAuctionsDatabase().addAuction(new Auction(player.getUniqueId(), createRandomItem(), 99999, rnd.nextBoolean()));
 		}
 	}
 	
