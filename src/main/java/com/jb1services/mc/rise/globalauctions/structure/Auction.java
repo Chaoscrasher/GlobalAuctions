@@ -56,6 +56,7 @@ public class Auction implements ConfigurationSerializable, InventoryClickable<Gl
 	public Auction(AuctionsDatabase adb, UUIDS creator, ItemStack itemStack, double price, boolean ask)
 	{
 		this(creator, adb.nextFreeId(), itemStack, price, ask);
+		adb.addAuction(this);
 	}
 
 	/*
@@ -74,6 +75,7 @@ public class Auction implements ConfigurationSerializable, InventoryClickable<Gl
 		this.auctionedItem = itemStack;
 		this.price = price;
 		this.isAsk = isAsk;
+		
 	}
 	
 	public UUIDS getCreator()
