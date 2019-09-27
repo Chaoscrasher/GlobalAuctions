@@ -168,7 +168,7 @@ public class GlobalAuctionsPlugin extends JavaPlugin implements StaticHelpers {
 	public void loadAuctionsDatabase() throws FileNotFoundException, IOException, InvalidConfigurationException
 	{
 		this.reloadConfig();
-		AuctionsDatabase object = getConfig().getObject("auctions", AuctionsDatabase.class);
+		AuctionsDatabase object = (AuctionsDatabase) getConfig().get("auctions");
 		System.out.println("Auctions " + (object != null ? "exist" : "don't exist") + "!");
 		if (object != null)
 		{
@@ -184,7 +184,7 @@ public class GlobalAuctionsPlugin extends JavaPlugin implements StaticHelpers {
 	public void loadItemRoulette() throws FileNotFoundException, IOException, InvalidConfigurationException
 	{
 		this.reloadConfig();
-		ItemStackRoulette roulette = getConfig().getObject("roulette", ItemStackRoulette.class);
+		ItemStackRoulette roulette = (ItemStackRoulette) getConfig().get("roulette", ItemStackRoulette.class);
 		if (roulette != null)
 				this.itemRoulette = roulette;
 		/*
