@@ -33,7 +33,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly "org.spigotmc:spigot-api:1.14.4-R0.1-SNAPSHOT"
+    implementation "org.spigotmc:spigot-api:1.14.4-R0.1-SNAPSHOT"
     implementation "com.github.MilkBowl:VaultAPI:1.7"
     compile fileTree(dir: 'libs', include: '*.jar')
     compile project(':chaosmcutil')
