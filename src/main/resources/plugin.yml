@@ -4,6 +4,7 @@ description:
 author: Chaoscrasher & Rise
 main: com.jb1services.mc.rise.globalauctions.main.GlobalAuctionsPlugin
 api-version: 1.14
+depend: [Essentials, Vault]
 
 commands:
   gas:
