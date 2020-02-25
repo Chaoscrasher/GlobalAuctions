@@ -49,70 +49,70 @@ public class GlobalAuctionEvents extends InventoryEventListener implements Debug
 	@EventHandler
 	public void onInventoryClick(InventoryClickEvent e)
 	{
-		Optional<Economy> econ = getPlugin().getEconomy();
-		if (econ.isPresent())
+		if (globalAuctionsInventoryDetected(e))
 		{
-			if (globalAuctionsInventoryDetected(e))
+			Optional<Economy> econ = getPlugin().getEconomy();
+			if (econ.isPresent())
 			{
-				Player player = (Player) e.getWhoClicked();
-				e.setCancelled(true);
-				if (auctionMenuDetected(e))
-				{
-					auctionProcessing(e);
-				}
-				else if (mainMenuDetected(e))
-				{
-					mainMenuProcessing(e);
-				}
-				else if (asksMenu.detect(e))
-				{
-					Optional<Inventory> nInv = asksMenu.onClick(getPlugin(), e);
-					if (nInv.isPresent())
-					{
-						player.openInventory(nInv.get());
-					}
-				}
- 				else if (sellsMenu.detect(e))
-				{
-					Optional<Inventory> nInv = sellsMenu.onClick(getPlugin(), e);
-					if (nInv.isPresent())
-					{
-						player.openInventory(nInv.get());
-					}
-				}
-				else if (getPlugin().getItemRoulette().detect(e))
-				{
-					Optional<Inventory> nInv = getPlugin().getItemRoulette().onClick(getPlugin(), e);
-					if (nInv != null)
-					{
-						if (nInv.isPresent())
-						{
-							player.openInventory(nInv.get());
-						}
-					}
-					else
-						player.closeInventory();
-				}
-				/*
-				else if (detectAskMenu(e))
-				{
-					asksSellsMenuClickProcessing(e, player);
-				}
-				*/
-				/*
-				else if (detectSellMenu(e))
-				{
-					asksSellsMenuClickProcessing(e, player);
-				}
-				else if (detectRouletteMenu(e))
-				{
-					rouletteMenuProcessing(e, player);
-				}
-				*/
+			Player player = (Player) e.getWhoClicked();
+			e.setCancelled(true);
+			if (auctionMenuDetected(e))
+			{
+				auctionProcessing(e);
 			}
+			else if (mainMenuDetected(e))
+			{
+				mainMenuProcessing(e);
+			}
+			else if (asksMenu.detect(e))
+			{
+				Optional<Inventory> nInv = asksMenu.onClick(getPlugin(), e);
+				if (nInv.isPresent())
+				{
+					player.openInventory(nInv.get());
+				}
+			}
+			else if (sellsMenu.detect(e))
+			{
+				Optional<Inventory> nInv = sellsMenu.onClick(getPlugin(), e);
+				if (nInv.isPresent())
+				{
+					player.openInventory(nInv.get());
+				}
+			}
+			else if (getPlugin().getItemRoulette().detect(e))
+			{
+				Optional<Inventory> nInv = getPlugin().getItemRoulette().onClick(getPlugin(), e);
+				if (nInv != null)
+				{
+					if (nInv.isPresent())
+					{
+						player.openInventory(nInv.get());
+					}
+				}
+				else
+					player.closeInventory();
+			}
+			/*
+			else if (detectAskMenu(e))
+			{
+				asksSellsMenuClickProcessing(e, player);
+			}
+			*/
+			/*
+			else if (detectSellMenu(e))
+			{
+				asksSellsMenuClickProcessing(e, player);
+			}
+			else if (detectRouletteMenu(e))
+			{
+				rouletteMenuProcessing(e, player);
+			}
+			*/
+			}
+			else
+				throw new IllegalStateException("Economy not initialized!");
 		}
-		else
-			throw new IllegalStateException("Economy not initialized!");
 	}
 	
 	public boolean globalAuctionsInventoryDetected(InventoryClickEvent e)
