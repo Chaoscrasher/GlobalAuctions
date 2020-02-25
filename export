@@ -1,0 +1,2 @@
+#!/bin/sh
+scp ./build/libs/globalauctions.jar pav:~/Servers/mcc/paper-1.14.4/plugins/
