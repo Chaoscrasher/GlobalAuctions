@@ -54,61 +54,61 @@ public class GlobalAuctionEvents extends InventoryEventListener implements Debug
 			Optional<Economy> econ = getPlugin().getEconomy();
 			if (econ.isPresent())
 			{
-			Player player = (Player) e.getWhoClicked();
-			e.setCancelled(true);
-			if (auctionMenuDetected(e))
-			{
-				auctionProcessing(e);
-			}
-			else if (mainMenuDetected(e))
-			{
-				mainMenuProcessing(e);
-			}
-			else if (asksMenu.detect(e))
-			{
-				Optional<Inventory> nInv = asksMenu.onClick(getPlugin(), e);
-				if (nInv.isPresent())
+				Player player = (Player) e.getWhoClicked();
+				e.setCancelled(true);
+				if (auctionMenuDetected(e))
 				{
-					player.openInventory(nInv.get());
+					auctionProcessing(e);
 				}
-			}
-			else if (sellsMenu.detect(e))
-			{
-				Optional<Inventory> nInv = sellsMenu.onClick(getPlugin(), e);
-				if (nInv.isPresent())
+				else if (mainMenuDetected(e))
 				{
-					player.openInventory(nInv.get());
+					mainMenuProcessing(e);
 				}
-			}
-			else if (getPlugin().getItemRoulette().detect(e))
-			{
-				Optional<Inventory> nInv = getPlugin().getItemRoulette().onClick(getPlugin(), e);
-				if (nInv != null)
+				else if (asksMenu.detect(e))
 				{
+					Optional<Inventory> nInv = asksMenu.onClick(getPlugin(), e);
 					if (nInv.isPresent())
 					{
 						player.openInventory(nInv.get());
 					}
 				}
-				else
-					player.closeInventory();
-			}
-			/*
-			else if (detectAskMenu(e))
-			{
-				asksSellsMenuClickProcessing(e, player);
-			}
-			*/
-			/*
-			else if (detectSellMenu(e))
-			{
-				asksSellsMenuClickProcessing(e, player);
-			}
-			else if (detectRouletteMenu(e))
-			{
-				rouletteMenuProcessing(e, player);
-			}
-			*/
+				else if (sellsMenu.detect(e))
+				{
+					Optional<Inventory> nInv = sellsMenu.onClick(getPlugin(), e);
+					if (nInv.isPresent())
+					{
+						player.openInventory(nInv.get());
+					}
+				}
+				else if (getPlugin().getItemRoulette().detect(e))
+				{
+					Optional<Inventory> nInv = getPlugin().getItemRoulette().onClick(getPlugin(), e);
+					if (nInv != null)
+					{
+						if (nInv.isPresent())
+						{
+							player.openInventory(nInv.get());
+						}
+					}
+					else
+						player.closeInventory();
+				}
+				/*
+				else if (detectAskMenu(e))
+				{
+					asksSellsMenuClickProcessing(e, player);
+				}
+				*/
+				/*
+				else if (detectSellMenu(e))
+				{
+					asksSellsMenuClickProcessing(e, player);
+				}
+				else if (detectRouletteMenu(e))
+				{
+					rouletteMenuProcessing(e, player);
+				}
+				*/
 			}
 			else
 				throw new IllegalStateException("Economy not initialized!");
