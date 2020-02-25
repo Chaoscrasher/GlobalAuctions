@@ -1,2 +1,0 @@
-#!/bin/sh
-ssh pav -t 'tmux a -t hm'
